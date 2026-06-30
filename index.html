@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dinto Manpower Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#E2123C;--red-hover:#c11030;--red-glyph:#E2123C;--red-tint:rgba(226,20,60,.10);
+  --sidebar:#16161a;
+  --bg:#f4f4f5;--panel-1:#fff;--panel-2:#fafafa;
+  --border:#e4e4e7;--border-hairline:#f1f1f2;--border-input:#d4d4d8;
+  --text:#18181b;--text-sec:#3f3f46;--text-muted:#71717a;--text-label:#a1a1aa;--text-faint:#d4d4d8;
+  --green:#16a34a;--amber:#b45309;
+  --sans:'Archivo',-apple-system,system-ui,sans-serif;--mono:'Space Mono',monospace;
+  --radius-card:10px;--radius-ctrl:9px;
+  --rail-w:236px;--topbar-h:64px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+::-webkit-scrollbar{height:11px;width:11px}
+::-webkit-scrollbar-thumb{background:#cdcdd2;border-radius:6px;border:2px solid #fff}
+::-webkit-scrollbar-thumb:hover{background:#b4b4ba}
+::-webkit-scrollbar-track{background:transparent}
+#login-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:radial-gradient(900px 600px at 50% -10%,#14202c 0%,#0c1117 60%)}
+.login-card{background:#fff;border-radius:18px;width:432px;padding:40px 38px 30px;box-shadow:0 30px 70px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:20px}
+.login-logo{text-align:center}
+.login-sub{text-align:center;font-size:11px;font-weight:600;letter-spacing:3.5px;color:var(--red);margin-top:-12px}
+.login-field label{display:block;font-size:12px;color:#555;margin-bottom:6px;font-weight:500}
+.login-field input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #ddd9d0;background:#f4f3f0;font-size:14px;color:#222;outline:none;transition:border .15s}
+.login-field input:focus{border-color:var(--red)}
+.btn-signin{width:100%;padding:14px;border-radius:11px;border:none;background:var(--red);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s}
+.btn-signin:hover{background:var(--red-hover)}
+.login-demo{font-size:11px;color:#999;text-align:center}
+.login-demo a{color:var(--red);cursor:pointer;text-decoration:none}
+#login-error{display:none;color:var(--red);font-size:12px;font-weight:600;text-align:center;padding:6px 10px;border-radius:8px;background:rgba(226,20,60,.08)}
+@media(max-width:500px){.login-card{width:calc(100vw - 24px);padding:28px 18px 20px}}
+#loading-overlay{position:fixed;inset:0;z-index:300;background:#0c1117;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .3s}
+#loading-overlay.fade{opacity:0;pointer-events:none}
+#app{display:none;width:100%;height:100vh}
+#app.visible{display:flex}
+.rail{width:var(--rail-w);background:var(--sidebar);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.rail-logo{padding:22px 18px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.rail-logo-text{font-size:9px;font-weight:700;letter-spacing:1px;color:#71717a;text-transform:uppercase;line-height:1.4;font-family:var(--mono)}
+.rail-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 13px;cursor:pointer;font-size:14px;font-weight:500;color:#a1a1aa;border-left:3px solid transparent;border-radius:9px;transition:all .15s;background:none;border-top:none;border-right:none;border-bottom:none;width:100%;text-align:left;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#d4d4d8}
+.nav-item.active{background:rgba(255,255,255,.07);color:#fff;font-weight:700;border-left-color:var(--red)}
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.rail-user{padding:14px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.user-avatar{width:36px;height:36px;border-radius:36px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.user-role{font-size:10px;color:#71717a;font-family:var(--mono)}
+.btn-logout{background:none;border:none;color:#5f6e7d;cursor:pointer;padding:4px;border-radius:6px;transition:color .15s}
+.btn-logout:hover{color:#a1a1aa}
+.main-col{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:var(--topbar-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 26px;gap:14px;flex-shrink:0}
+.screen-title{font-size:19px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;margin:0}
+.topbar-spacer{flex:1}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.screen{flex:1;overflow-y:auto;padding:26px 26px 90px}
+.panel{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.kpi-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-card);padding:15px 16px}
+.kpi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-label);margin-bottom:8px}
+.kpi-val{font-family:var(--mono);font-size:28px;font-weight:800;line-height:1;letter-spacing:-1px}
+.kpi-sub{font-size:12px;color:var(--text-muted);margin-top:6px}
+.btn-red{padding:9px 16px;border-radius:9px;border:none;background:var(--red);color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;white-space:nowrap}
+.btn-red:hover{background:var(--red-hover)}
+.btn-outline{padding:9px 16px;border-radius:9px;border:1px solid var(--border);background:#fff;color:#52525b;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.btn-outline:hover{border-color:#a1a1aa;color:#18181b}
+.btn-ghost{padding:5px 9px;border-radius:7px;border:none;background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{background:rgba(0,0,0,.05);color:var(--text)}
+.form-field{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:12px;font-weight:500;color:#555}
+.form-input,.form-select,.form-textarea{padding:12px 14px;border-radius:10px;border:1px solid #ddd9d0;background:#f4f3f0;font-size:14px;color:#222;outline:none;transition:border .15s;width:100%}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--red);background:#fff}
+.form-textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-select option{background:#fff;color:#18181b}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px);padding:16px}
+.modal{background:#fff;border-radius:18px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.3)}
+.modal-lg{max-width:640px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #e4e4e7;position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-size:16px;font-weight:700}
+.modal-close{width:30px;height:30px;border-radius:8px;border:none;background:#f4f4f5;color:#71717a;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-close:hover{color:#18181b}
+.modal-body{padding:24px;display:flex;flex-direction:column;gap:16px}
+.modal-foot{padding:16px 24px;border-top:1px solid #e4e4e7;display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:#fff}
+.modal-error{color:var(--red);font-size:12px;font-weight:600;display:none}
+.badge{display:inline-block;font-family:var(--mono);font-weight:700;text-transform:uppercase;border-radius:5px;font-size:9px;letter-spacing:.8px;padding:4px 8px;white-space:nowrap}
+.badge-in{background:rgba(226,20,60,.10);color:var(--red)}
+.badge-out{background:#EEF2FF;color:#4338CA}
+.badge-pending{background:#FEF3C7;color:#92400E}
+.badge-approved{background:#DCFCE7;color:#166534}
+.badge-denied{background:#F3F4F6;color:#6B7280}
+.badge-urgent{background:#FEE2E2;color:#B91C1C}
+.badge-high{background:#FFEDD5;color:#C2410C}
+.badge-normal{background:#E0E7FF;color:#3730A3}
+.badge-low{background:#F1F5F9;color:#475569}
+.badge-admin{background:#FEF3C7;color:#92400E}
+.badge-pm{background:#DCFCE7;color:#166534}
+.badge-foreman{background:rgba(226,20,60,.10);color:var(--red)}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-label);padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);background:#fafafa}
+.data-table td{padding:12px 16px;border-bottom:1px solid var(--border-hairline);font-size:13px;vertical-align:middle;color:var(--text)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#fafafa}
+.req-card{background:#fff;border:1px solid #e4e4e7;border-radius:11px;padding:15px 16px;cursor:pointer;width:100%;text-align:left;transition:all .12s}
+.req-card:hover{border-color:#a1a1aa}
+.req-card.selected{border:1.5px solid var(--red);box-shadow:rgba(226,20,60,.13) 0 0 0 3px}
+.worker-chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;border:1.5px solid #e4e4e7;background:#fff;cursor:pointer;transition:all .15s}
+.worker-chip:hover,.worker-chip.selected{border-color:var(--red);background:rgba(226,20,60,.04)}
+.chip-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.gantt-wrap{overflow:auto;max-height:566px;border:1px solid #e4e4e7;border-radius:10px;background:#fff}
+.gantt-inner{display:flex;min-width:max-content}
+.gantt-labels{width:222px;flex:0 0 222px;position:sticky;left:0;z-index:3;background:#fff;border-right:1px solid #e4e4e7}
+.gantt-corner{height:46px;display:flex;align-items:flex-end;padding:0 12px 10px;border-bottom:1px solid #e4e4e7;position:sticky;top:0;z-index:4;background:#fff}
+.gantt-group-row{height:30px;background:#fafafa;border-bottom:1px solid #ececee;border-top:1px solid #ececee;display:flex;align-items:center;justify-content:space-between;padding:0 12px}
+.gantt-person-row{height:46px;border-bottom:1px solid #f1f1f2;display:flex;align-items:center;gap:10px;padding:0 12px}
+.gantt-timeline-header{height:46px;position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid #e4e4e7}
+.detail-pane{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:22px}
+.detail-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#a1a1aa;margin-bottom:4px;font-family:var(--mono)}
+.detail-val{font-size:14px;font-weight:600;color:#18181b}
+.detail-sub{font-size:12px;color:#71717a;margin-top:2px}
+.empty-state{display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 24px;text-align:center;border:1.5px dashed #d4d4d8;border-radius:14px}
+.empty-state svg{color:#d4d4d8}
+.empty-state h3{font-size:15px;font-weight:600;color:#52525b}
+.empty-state p{font-size:13px;color:#71717a;max-width:280px}
+.color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block}
+.hidden{display:none!important}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#18181b;border:1px solid var(--green);border-radius:12px;padding:12px 20px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--green);box-shadow:0 16px 40px rgba(0,0,0,.25);z-index:400;transition:transform .25s ease,opacity .25s ease;opacity:0;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.error{border-color:var(--red);color:#ff5d77}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--sidebar);border-top:1px solid rgba(255,255,255,.08);padding:6px 0 max(6px,env(safe-area-inset-bottom));flex-direction:row;justify-content:space-around}
+.mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;padding:6px 4px;cursor:pointer;border:none;background:none;color:#71717a;font-size:10px;font-weight:700;letter-spacing:.3px;font-family:var(--mono);transition:color .15s}
+.mobile-nav-item.active{color:#fff}
+.mobile-nav-item svg{width:22px;height:22px}
+@media(max-width:768px){.rail{display:none}.mobile-nav{display:flex}.screen{padding:14px 14px calc(72px + env(safe-area-inset-bottom))}.form-row{grid-template-columns:1fr}.modal{max-width:100%;border-radius:14px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-overlay">
+  <svg width="48" height="48" viewBox="0 0 28 28" fill="none"><path d="M0 0H16a14 14 0 0 1 0 28H0V0zM6 6H16a8 8 0 0 1 0 16H6V6z" fill="#E2143C"/></svg>
+  <div style="font-size:13px;color:#5f6e7d">Loading…</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="228" height="48" viewBox="0 0 228 48" fill="none">
+        <path d="M0 4H28a20 20 0 0 1 0 40H0V4zM10 13H28a11 11 0 0 1 0 22H10V13z" fill="#E2143C"/>
+        <text x="50" y="32" font-family="IBM Plex Sans,sans-serif" font-weight="700" font-size="20" fill="#111">DINTO ELECTRICAL</text>
+        <text x="50" y="46" font-family="IBM Plex Sans,sans-serif" font-weight="400" font-size="11" fill="#666">CONTRACTORS, INC.</text>
+      </svg>
+    </div>
+    <div class="login-sub">MANPOWER TRACKER</div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@dinto.com" autocomplete="off">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="login-error"></div>
+    <button class="btn-signin" onclick="doLogin()">Sign in</button>
+    <div class="login-demo">
+      <a onclick="showRegister()">Create account</a> &nbsp;&middot;&nbsp;
+      <a onclick="demoLogin('admin')" style="color:#9aa7b5">Admin demo</a> &nbsp;&middot;&nbsp;
+      <a onclick="demoLogin('pm')" style="color:#9aa7b5">PM demo</a>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div id="register-screen" style="display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:radial-gradient(900px 600px at 50% -10%,#14202c 0%,#0c1117 60%)">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="228" height="48" viewBox="0 0 228 48" fill="none">
+        <path d="M0 4H28a20 20 0 0 1 0 40H0V4zM10 13H28a11 11 0 0 1 0 22H10V13z" fill="#E2143C"/>
+        <text x="50" y="32" font-family="IBM Plex Sans,sans-serif" font-weight="700" font-size="20" fill="#111">DINTO ELECTRICAL</text>
+        <text x="50" y="46" font-family="IBM Plex Sans,sans-serif" font-weight="400" font-size="11" fill="#666">CONTRACTORS, INC.</text>
+      </svg>
+    </div>
+    <div class="login-sub">CREATE ACCOUNT</div>
+    <div class="form-row" style="gap:10px">
+      <div class="login-field"><label>First Name</label><input type="text" id="reg-first" placeholder="First"></div>
+      <div class="login-field"><label>Last Name</label><input type="text" id="reg-last" placeholder="Last"></div>
+    </div>
+    <div class="login-field"><label>Email</label><input type="email" id="reg-email" placeholder="you@dinto.com"></div>
+    <div class="login-field"><label>Password</label><input type="password" id="reg-password" placeholder="At least 6 characters"></div>
+    <div class="login-field"><label>Confirm Password</label><input type="password" id="reg-password2" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doRegister()"></div>
+    <div id="reg-error" style="display:none;color:var(--red);font-size:12px;font-weight:600;text-align:center"></div>
+    <button class="btn-signin" onclick="doRegister()">Create Account</button>
+    <div class="login-demo">Already have an account? <a onclick="showSignIn()">Sign in</a></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="rail">
+    <div class="rail-logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M0 0H16a14 14 0 0 1 0 28H0V0zM6 6H16a8 8 0 0 1 0 16H6V6z" fill="#E2143C"/></svg>
+      <div class="rail-logo-text">Manpower<br>Tracker</div>
+    </div>
+    <div class="rail-nav" id="rail-nav"></div>
+    <div class="rail-user">
+      <div class="user-avatar" id="rail-avatar">SL</div>
+      <div class="user-info">
+        <div class="user-name" id="rail-name">Sara Lin</div>
+        <div class="user-role" id="rail-role">Project Manager</div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()" title="Sign out">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="main-col">
+    <div class="topbar">
+      <div style="display:flex;align-items:baseline;gap:14px;min-width:0">
+        <h1 class="screen-title" id="topbar-title"></h1>
+        <span id="topbar-sub" style="font-family:var(--mono);font-size:11px;color:#a1a1aa;letter-spacing:.5px;white-space:nowrap"></span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:#16a34a;font-weight:700">
+          <div class="live-dot"></div>LIVE
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="text-align:right">
+            <div id="topbar-user-name" style="font-size:13px;font-weight:600"></div>
+            <div id="topbar-user-role" style="font-family:var(--mono);font-size:10px;color:#a1a1aa"></div>
+          </div>
+          <div id="topbar-avatar" style="width:38px;height:38px;border-radius:38px;background:#18181b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="screen" id="screen-area"></div>
+  </div>
+
+  <nav class="mobile-nav" id="mobile-nav"></nav>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><span id="toast-msg"></span></div>
+
+<!-- ════════════════════════════════════════════════ MODALS ════ -->
+
+<!-- New/Edit Request Modal -->
+<div class="modal-backdrop hidden" id="modal-request">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-request-title">New Manpower Request</div>
+      <button class="modal-close" onclick="closeModal('modal-request')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Direction</label>
+          <select class="form-select" id="req-dir" onchange="updateRequestForm()">
+            <option value="in">Incoming — I need crew</option>
+            <option value="out">Outgoing — I'm releasing crew</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Request Type</label>
+          <select class="form-select" id="req-type" onchange="updateRequestForm()">
+            <option value="person">Specific Person</option>
+            <option value="role">By Role / Count</option>
+          </select>
+        </div>
+      </div>
+      <div id="req-person-fields">
+        <div class="form-field">
+          <label class="form-label">Worker</label>
+          <select class="form-select" id="req-worker"></select>
+        </div>
+      </div>
+      <div id="req-role-fields" class="hidden">
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Trade Class</label>
+            <select class="form-select" id="req-role">
+              <option>General Foreman</option><option>Foreman</option><option>Subforeman</option>
+              <option>Journeyman</option><option>Apprentice</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Quantity</label>
+            <input class="form-input" type="number" id="req-qty" min="1" value="1">
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">From Job</label>
+          <select class="form-select" id="req-from"></select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">To Job</label>
+          <select class="form-select" id="req-to"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-label">Counter PM</label>
+          <select class="form-select" id="req-counter"></select>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="req-priority">
+            <option>Urgent</option><option>High</option><option selected>Normal</option><option>Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Duration</label>
+        <select class="form-select" id="req-perm" onchange="updateRequestForm()">
+          <option value="0">Temporary — set dates</option>
+          <option value="1">Permanent transfer</option>
+        </select>
+      </div>
+      <div id="req-dates" class="form-row">
+        <div class="form-field"><label class="form-label">Start Date</label><input class="form-input" type="date" id="req-start"></div>
+        <div class="form-field"><label class="form-label">End Date</label><input class="form-input" type="date" id="req-end"></div>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Note / Justification</label>
+        <textarea class="form-textarea" id="req-note" placeholder="Explain why this crew movement is needed…"></textarea>
+      </div>
+      <div class="modal-error" id="req-error"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" onclick="closeModal('modal-request')">Cancel</button>
+      <button class="btn-red" onclick="saveRequest()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- New/Edit Job Modal -->
+<div class="modal-backdrop hidden" id="modal-job">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-job-title">New Job</div>
+      <button class="modal-close" onclick="closeModal('modal-job')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Job Name *</label><input class="form-input" id="job-name" placeholder="e.g. Riverside Medical Center"></div>
+        <div class="form-field"><label class="form-label">Short Name</label><input class="form-input" id="job-short" placeholder="e.g. Riverside Medical"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Job Code</label><input class="form-input" id="job-number" placeholder="e.g. RMC"></div>
+        <div class="form-field"><label class="form-label">Location</label><input class="form-input" id="job-location" placeholder="City, State"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Phase / Area</label><input class="form-input" id="job-phase" placeholder="e.g. Phase 2 — Bldg C"></div>
+        <div class="form-field"><label class="form-label">Status</label>
+          <select class="form-select" id="job-status"><option>Active</option><option>Bidding</option><option>On Hold</option><option>Complete</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">Assigned PM</label><select class="form-select" id="job-pm"></select></div>
+        <div class="form-field"><label class="form-label">Color</label>
+          <select class="form-select" id="job-color">
+            <option value="#E2123C">Dinto Red</option><option value="#0E8A7C">Teal</option>
+            <option value="#B86A00">Amber</option><option value="#2563C9">Blue</option>
+            <option value="#6D4AED">Purple</option><option value="#16a34a">Green</option>
+            <option value="#a1a1aa">Gray</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-field"><label class="form-label">Start Date</label><input class="form-input" type="date" id="job-start"></div>
+      <div class="modal-error" id="job-error"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" onclick="closeModal('modal-job')">Cancel</button>
+      <button class="btn-red" onclick="saveJob()">Save Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- New/Edit Worker Modal -->
+<div class="modal-backdrop hidden" id="modal-worker">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-worker-title">Add Worker</div>
+      <button class="modal-close" onclick="closeModal('modal-worker')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">First Name *</label><input class="form-input" id="wk-first" placeholder="First"></div>
+        <div class="form-field"><label class="form-label">Last Name *</label><input class="form-input" id="wk-last" placeholder="Last"></div>
+      </div>
+      <div class="form-field"><label class="form-label">Trade Class</label>
+        <select class="form-select" id="wk-trade">
+          <option>General Foreman</option><option>Foreman</option><option>Subforeman</option>
+          <option>Journeyman</option><option>Apprentice</option><option>Master Electrician</option>
+        </select>
+      </div>
+      <div class="form-field"><label class="form-label">Phone</label><input class="form-input" id="wk-phone" placeholder="(555) 000-0000" type="tel"></div>
+      <div class="modal-error" id="wk-error"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" onclick="closeModal('modal-worker')">Cancel</button>
+      <button class="btn-red" onclick="saveWorker()">Save Worker</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Worker Modal -->
+<div class="modal-backdrop hidden" id="modal-assign">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">Assign Worker to Job</div>
+      <button class="modal-close" onclick="closeModal('modal-assign')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-field">
+        <label class="form-label">Worker</label>
+        <select class="form-select" id="assign-worker"></select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Job</label>
+        <select class="form-select" id="assign-job"></select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Start Date *</label>
+        <input class="form-input" type="date" id="assign-start">
+      </div>
+      <div class="form-field">
+        <label class="form-label">Duration</label>
+        <select class="form-select" id="assign-perm" onchange="document.getElementById('assign-end-wrap').classList.toggle('hidden',this.value==='1')">
+          <option value="0">Temporary — set end date</option>
+          <option value="1">Permanent / Ongoing</option>
+        </select>
+      </div>
+      <div class="form-field" id="assign-end-wrap">
+        <label class="form-label">End Date</label>
+        <input class="form-input" type="date" id="assign-end">
+      </div>
+      <div class="modal-error" id="assign-error"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" onclick="closeModal('modal-assign')">Cancel</button>
+      <button class="btn-red" onclick="saveAssignment()">Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- Account Modal -->
+<div class="modal-backdrop hidden" id="modal-account">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-account-title">Add Account</div>
+      <button class="modal-close" onclick="closeModal('modal-account')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-field"><label class="form-label">First Name *</label><input class="form-input" id="acc-first" placeholder="First"></div>
+        <div class="form-field"><label class="form-label">Last Name *</label><input class="form-input" id="acc-last" placeholder="Last"></div>
+      </div>
+      <div class="form-field"><label class="form-label">Email *</label><input class="form-input" id="acc-email" type="email" placeholder="name@dinto.com"></div>
+      <div class="form-field" id="acc-pw-wrap"><label class="form-label">Password *</label><input class="form-input" id="acc-password" type="password" placeholder="At least 6 characters"></div>
+      <div class="form-field" id="acc-pw2-wrap"><label class="form-label">Confirm Password *</label><input class="form-input" id="acc-password2" type="password" placeholder="Repeat password"></div>
+      <div class="form-field"><label class="form-label">Role</label>
+        <select class="form-select" id="acc-role">
+          <option value="admin">Admin</option>
+          <option value="pm">Project Manager</option>
+          <option value="foreman">Foreman</option>
+        </select>
+      </div>
+      <div class="form-field"><label class="form-label">Home Job (PM/Foreman)</label>
+        <select class="form-select" id="acc-job"></select>
+      </div>
+      <div class="modal-error" id="acc-error"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-outline" onclick="closeModal('modal-account')">Cancel</button>
+      <button class="btn-red" id="acc-save-btn" onclick="saveAccount()">Add Account</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+const SB_URL='https://denhzmjjscbqevgrksas.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlbmh6bWpqc2NicWV2Z3Jrc2FzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTExNDMsImV4cCI6MjA5NzQyNzE0M30.9uqVLV-56Yi856Zno57Ikf7mKOuwz8QKeXzmZTKqhIY';
+const SESSION_KEY='dinto_mp_session_v2';
+const ACCOUNTS_KEY='dinto_accounts_v1'; // shared with productivity tool
+
+let SB=null;
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let ME={id:'',name:'',initials:'',role:'',jobId:'',loggedIn:false};
+let DATA={accounts:[],jobs:[],workers:[],assignments:[],requests:[]};
+let UI={screen:'dashboard',selReqId:null,reqTab:'all',editJobId:null,editWorkerId:null,editAccId:null,editAssignId:null,zoom:'Week'};
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+function hashPw(pw){let h=0;for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;}return 'h'+Math.abs(h).toString(36);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function initials(n){return(n||'').split(' ').filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function today(){return new Date().toISOString().slice(0,10);}
+function fmtDate(d){if(!d)return '—';const ms=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];const[y,m,dd]=d.split('-');return ms[parseInt(m)-1]+' '+parseInt(dd)+', '+y;}
+function daysDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000)+1;}
+function getAccounts(){try{return JSON.parse(localStorage.getItem(ACCOUNTS_KEY))||[];}catch{return[];}}
+function saveLocalAccounts(a){localStorage.setItem(ACCOUNTS_KEY,JSON.stringify(a));}
+
+const TODAY_DT=new Date('2026-06-26T00:00:00');
+function todayForDemo(){return'2026-06-26';}
+
+function currentJob(p,dt){
+  const d=dt||TODAY_DT;
+  for(const a of (DATA.assignments||[]).filter(x=>x.worker_id===p.id).sort((a,b)=>a.start_date>b.start_date?-1:1)){
+    const sd=new Date(a.start_date+'T00:00:00');
+    const ed=a.is_permanent?new Date('2999-01-01'):new Date((a.end_date||'2999-01-01')+'T00:00:00');
+    if(d>=sd&&d<=ed)return a.job_id;
+  }
+  const all=DATA.assignments.filter(x=>x.worker_id===p.id);
+  if(all.length){const last=all.sort((a,b)=>a.start_date>b.start_date?-1:1)[0];return last.job_id;}
+  return'YARD';
+}
+function jobById(id){return DATA.jobs.find(j=>j.id===id)||{id:'YARD',name:'Yard / Unassigned',short_name:'Available',color:'#a1a1aa',number:''};}
+function accountById(id){return DATA.accounts.find(a=>a.id===id);}
+function workerById(id){return DATA.workers.find(w=>w.id===id);}
+
+// Permissions
+const isAdmin=()=>ME.role==='admin';
+const isPM=()=>ME.role==='pm'||ME.role==='admin';
+const myJobId=()=>ME.jobId||DATA.jobs[0]?.id;
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+let toastTimer=null;
+function showToast(msg,isError=false){
+  const t=$('toast');t.className=isError?'error show':'show';
+  $('toast-msg').textContent=msg;
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='',3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUPABASE INIT + REALTIME
+// ═══════════════════════════════════════════════════════════════
+function initRealtime(){
+  if(!SB)return;
+  ['accounts','mp_jobs','workers','mp_assignments','mp_requests'].forEach(t=>{
+    SB.channel('rt_mp_'+t).on('postgres_changes',{event:'*',schema:'public',table:t},()=>{
+      loadData().then(render);
+    }).subscribe();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DATA LAYER
+// ═══════════════════════════════════════════════════════════════
+async function sbGet(table){
+  if(!SB)return[];
+  const{data,error}=await SB.from(table).select('*');
+  if(error){
+    console.error('sbGet',table,error.message,error.code);
+    // Surface schema-missing errors clearly
+    if(error.code==='42P01'||error.message.includes('does not exist')){
+      showSchemaError(table);
+    }
+    return[];
+  }
+  return data||[];
+}
+async function sbUpsert(table,row){
+  if(!SB){console.error('sbUpsert called but SB is null — Supabase not initialized');showToast('Database not connected',true);return false;}
+  console.log('sbUpsert →',table,row);
+  const{error}=await SB.from(table).upsert(row);
+  if(error){
+    console.error('sbUpsert FAILED',table,error.code,error.message,JSON.stringify(row));
+    const msg=error.message||'Unknown error';
+    showToast(msg.length>80?msg.slice(0,80)+'…':msg,true);
+    return false;
+  }
+  console.log('sbUpsert OK',table,row.id);
+  return true;
+}
+async function sbDelete(table,id){
+  if(!SB)return false;
+  const{error}=await SB.from(table).delete().eq('id',id);
+  if(error){console.error('sbDelete',table,error.message);return false;}
+  return true;
+}
+
+let schemaErrorShown=false;
+function showSchemaError(table){
+  if(schemaErrorShown)return;
+  schemaErrorShown=true;
+  // Inject a visible banner into the loading overlay / body
+  const banner=document.createElement('div');
+  banner.style.cssText='position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;font-family:system-ui,sans-serif;gap:20px';
+  banner.innerHTML=`
+    <svg width="48" height="48" viewBox="0 0 28 28" fill="none"><path d="M0 0H16a14 14 0 0 1 0 28H0V0zM6 6H16a8 8 0 0 1 0 16H6V6z" fill="#E2123C"/></svg>
+    <h2 style="font-size:20px;font-weight:800;color:#18181b;margin:0">Database setup required</h2>
+    <p style="font-size:14px;color:#71717a;max-width:420px;text-align:center;margin:0">
+      The table <code style="background:#f4f4f5;padding:2px 6px;border-radius:4px;font-family:monospace">${table}</code> doesn't exist in Supabase yet.
+      Run <strong>schema.sql</strong> in the Supabase SQL editor to create the required tables.
+    </p>
+    <div style="background:#f4f4f5;border-radius:10px;padding:16px 20px;max-width:420px;width:100%">
+      <div style="font-size:12px;font-weight:700;color:#a1a1aa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px">Steps</div>
+      <ol style="font-size:13px;color:#3f3f46;line-height:1.8;margin:0;padding-left:18px">
+        <li>Go to your Supabase project dashboard</li>
+        <li>Open <strong>SQL Editor → New query</strong></li>
+        <li>Paste and run the contents of <strong>schema.sql</strong></li>
+        <li>Refresh this page</li>
+      </ol>
+    </div>
+    <button onclick="location.reload()" style="background:#E2123C;color:#fff;border:none;border-radius:9px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">Refresh after setup</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+function initRealtime(){
+  if(!SB)return;
+  ['accounts','workers','mp_jobs','mp_assignments','mp_requests'].forEach(t=>{
+    SB.channel('rt_'+t)
+      .on('postgres_changes',{event:'*',schema:'public',table:t},async()=>{
+        await loadData();
+        if(ME.loggedIn)render();
+      })
+      .subscribe();
+  });
+}
+
+async function loadData(){
+  if(!SB){console.warn('loadData: SB null, using local accounts');DATA.accounts=getAccounts();return;}
+  try{
+    console.log('loadData: fetching from Supabase...');
+    const[accounts,jobs,workers,assignments,requests]=await Promise.all([
+      sbGet('accounts'),
+      sbGet('mp_jobs'),
+      sbGet('workers'),
+      sbGet('mp_assignments'),
+      sbGet('mp_requests'),
+    ]);
+    console.log('loadData: accounts='+accounts.length+' jobs='+jobs.length+' workers='+workers.length+' assignments='+assignments.length+' requests='+requests.length);
+    DATA={
+      accounts:accounts.map(a=>({
+        id:a.id,first_name:a.first_name||'',last_name:a.last_name||'',
+        email:a.email||'',passwordHash:a.password_hash||'',
+        role:a.role||'pm',jobId:a.project_id||'',
+        name:((a.first_name||'')+' '+(a.last_name||'')).trim(),
+      })),
+      jobs:jobs.map(j=>({
+        id:j.id,name:j.name,short_name:j.short_name||j.name,
+        color:j.color||'#E2123C',number:j.number||'',
+        location:j.location||'',phase:j.phase||'',
+        status:j.status||'Active',pm_id:j.pm_id||'',start_date:j.start_date||'',
+      })),
+      workers:workers.map(w=>({
+        id:w.id,name:w.name,initials:w.initials||initials(w.name),
+        trade_class:w.trade_class||'Journeyman',phone:w.phone||'',rates:w.rates||{},
+      })),
+      assignments:assignments.map(a=>({
+        id:a.id,worker_id:a.worker_id,job_id:a.job_id,
+        start_date:a.start_date,end_date:a.end_date||'',is_permanent:!!a.is_permanent,
+      })),
+      requests:requests.map(r=>({
+        id:r.id,direction:r.direction,request_type:r.request_type,
+        worker_id:r.worker_id||'',worker_name:r.worker_name||'',worker_role:r.worker_role||'',
+        role_requested:r.role_requested||'',qty:r.qty||1,
+        from_job_id:r.from_job_id,to_job_id:r.to_job_id,
+        counter_pm_id:r.counter_pm_id||'',is_permanent:!!r.is_permanent,
+        start_date:r.start_date||'',end_date:r.end_date||'',
+        priority:r.priority||'Normal',status:r.status||'Pending',
+        submitted_by:r.submitted_by||'',submitted_at:r.submitted_at||'',note:r.note||'',
+      })),
+    };
+    saveLocalAccounts(DATA.accounts.map(a=>({
+      id:a.id,firstName:a.first_name,lastName:a.last_name,
+      email:a.email,passwordHash:a.passwordHash,role:a.role,
+    })));
+  }catch(e){
+    console.error('loadData exception:',e);
+    DATA.accounts=getAccounts();
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════
+function showLoginError(msg){const e=$('login-error');e.textContent=msg;e.style.display='block';}
+function showRegister(){$('login-screen').style.display='none';const r=$('register-screen');r.style.display='flex';}
+function showSignIn(){$('register-screen').style.display='none';$('login-screen').style.display='flex';}
+
+async function doLogin(){
+  $('login-error').style.display='none';
+  const email=$('login-email').value.trim().toLowerCase();
+  const pw=$('login-password').value;
+  if(!email||!pw){showLoginError('Please enter your email and password.');return;}
+  const user=DATA.accounts.find(u=>u.email===email&&u.passwordHash===hashPw(pw));
+  if(!user){showLoginError('Email or password is incorrect.');return;}
+  loginAs(user);
+}
+
+async function doRegister(){
+  const first=$('reg-first').value.trim(),last=$('reg-last').value.trim();
+  const email=$('reg-email').value.trim().toLowerCase();
+  const pw=$('reg-password').value,pw2=$('reg-password2').value;
+  const err=id=>($('reg-error').textContent=id,$('reg-error').style.display='block');
+  if(!first||!last){err('Please enter your full name.');return;}
+  if(!email){err('Please enter your email.');return;}
+  if(pw.length<6){err('Password must be at least 6 characters.');return;}
+  if(pw!==pw2){err('Passwords do not match.');return;}
+  if(DATA.accounts.find(u=>u.email===email)){err('An account with that email already exists.');return;}
+  const newUser={id:'u'+uid(),first_name:first,last_name:last,email,passwordHash:hashPw(pw),role:'pm',jobId:'',name:(first+' '+last).trim()};
+  DATA.accounts.push(newUser);
+  await sbUpsert('accounts',{id:newUser.id,first_name:first,last_name:last,email,password_hash:hashPw(pw),role:'pm',project_id:null});
+  saveLocalAccounts(DATA.accounts.map(a=>({id:a.id,firstName:a.first_name||a.name?.split(' ')[0],lastName:a.last_name||a.name?.split(' ')[1]||'',email:a.email,passwordHash:a.passwordHash,role:a.role})));
+  loginAs(newUser);
+}
+
+function demoLogin(role){
+  const demos={
+    admin:{id:'demo-admin',name:'Admin User',email:'admin@dinto.com',role:'admin',jobId:''},
+    pm:{id:'demo-pm',name:'Sara Lin',email:'sara@dinto.com',role:'pm',jobId:DATA.jobs[0]?.id||''}
+  };
+  const d=demos[role]||demos.admin;
+  loginAs({...d,initials:initials(d.name)});
+}
+
+function loginAs(user){
+  ME={
+    id:user.id,
+    name:user.name||(user.first_name+' '+user.last_name).trim(),
+    initials:user.initials||initials(user.name||(user.first_name+' '+user.last_name)),
+    role:user.role||'pm',
+    jobId:user.jobId||user.project_id||''
+  };
+  ME.loggedIn=true;
+  localStorage.setItem(SESSION_KEY,JSON.stringify(ME));
+  $('login-screen').style.display='none';
+  $('register-screen').style.display='none';
+  launchApp();
+}
+
+function doLogout(){
+  localStorage.removeItem(SESSION_KEY);
+  ME={id:'',name:'',initials:'',role:'',jobId:'',loggedIn:false};
+  $('app').style.display='none';
+  $('login-screen').style.display='flex';
+  $('login-email').value='';$('login-password').value='';
+  $('login-error').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// APP BOOT
+// ═══════════════════════════════════════════════════════════════
+function launchApp(){
+  $('app').style.display='flex';
+  $('rail-avatar').textContent=ME.initials;
+  $('rail-name').textContent=ME.name;
+  $('rail-role').textContent={admin:'ADMIN',pm:'PROJECT MGR',foreman:'FOREMAN'}[ME.role]||ME.role.toUpperCase();
+  const tn=$('topbar-user-name');if(tn)tn.textContent=ME.name;
+  const ta=$('topbar-avatar');if(ta)ta.textContent=ME.initials;
+  const tr=$('topbar-user-role');if(tr)tr.textContent={admin:'ADMINISTRATOR',pm:'PROJECT MGR',foreman:'FOREMAN'}[ME.role]||ME.role.toUpperCase();
+  buildNav();
+  setScreen('dashboard');
+}
+
+const NAV_ITEMS=[
+  {id:'dashboard',label:'Dashboard',roles:['admin','pm','foreman'],icon:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'},
+  {id:'schedule',label:'Schedule',roles:['admin','pm','foreman'],icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
+  {id:'requests',label:'Requests',roles:['admin','pm'],icon:'<path d="M4 9h16M16 5l4 4-4 4M20 15H4M8 11l-4 4 4 4"/>'},
+  {id:'roster',label:'Roster',roles:['admin','pm','foreman'],icon:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'},
+  {id:'jobs',label:'Jobs',roles:['admin','pm'],icon:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>'},
+  {id:'accounts',label:'Accounts',roles:['admin'],icon:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="23" y2="8"/><line x1="21" y1="6" x2="21" y2="10"/>'},
+];
+
+function buildNav(){
+  const items=NAV_ITEMS.filter(n=>n.roles.includes(ME.role));
+  const rail=$('rail-nav');
+  rail.innerHTML=items.map(n=>`
+    <button class="nav-item${UI.screen===n.id?' active':''}" onclick="setScreen('${n.id}')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">${n.icon}</svg>
+      ${n.label}
+    </button>`).join('');
+  const mob=$('mobile-nav');
+  mob.innerHTML=items.slice(0,5).map(n=>`
+    <button class="mobile-nav-item${UI.screen===n.id?' active':''}" onclick="setScreen('${n.id}')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">${n.icon}</svg>
+      ${n.label}
+    </button>`).join('');
+}
+
+function setScreen(s){
+  UI.screen=s;
+  const titles={dashboard:['Dashboard','MANPOWER OVERVIEW'],schedule:['Crew Schedule','WHERE EVERY HAND IS'],requests:['Manpower Requests','PM-TO-PM CREW TRANSFERS'],roster:['Company Roster','ALL FIELD PERSONNEL'],jobs:['Jobs','ACTIVE JOB SITES'],accounts:['Accounts','USER MANAGEMENT']};
+  const[title,sub]=titles[s]||[s,''];$('topbar-title').textContent=title;const subEl=$('topbar-sub');if(subEl)subEl.textContent=sub;
+  buildNav();
+  render();
+}
+
+function render(){
+  const screens={dashboard:renderDashboard,schedule:renderSchedule,requests:renderRequests,roster:renderRoster,jobs:renderJobs,accounts:renderAccounts};
+  const fn=screens[UI.screen];
+  if(fn)fn();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCREEN: DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function renderDashboard(){
+  const myJob=isAdmin()?null:jobById(myJobId());
+  const totalWorkers=DATA.workers.length;
+  const onSite=DATA.workers.filter(w=>currentJob(w)!=='YARD').length;
+  const pendingReqs=DATA.requests.filter(r=>r.status==='Pending').length;
+  const myReqs=isAdmin()?DATA.requests:DATA.requests.filter(r=>r.from_job_id===myJobId()||r.to_job_id===myJobId());
+  const myPending=myReqs.filter(r=>r.status==='Pending').length;
+
+  let jobsHTML='';
+  const showJobs=isAdmin()?DATA.jobs:DATA.jobs.filter(j=>j.id===myJobId());
+  showJobs.forEach(j=>{
+    const crew=DATA.workers.filter(w=>currentJob(w)===j.id);
+    const pm=accountById(j.pm_id);
+    jobsHTML+=`<div class="kpi-card" style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="color-dot" style="background:${j.color}"></span>
+        <span style="font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text-sec)">${j.number||j.id}</span>
+        <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${j.status==='Active'?'rgba(54,201,141,.12)':'rgba(255,255,255,.06)'};color:${j.status==='Active'?'#36c98d':'var(--text-muted)'};margin-left:auto">${j.status}</span>
+      </div>
+      <div style="font-size:15px;font-weight:700">${j.name}</div>
+      ${j.phase?`<div style="font-size:12px;color:var(--text-muted)">${j.phase}</div>`:''}
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span style="font-size:28px;font-weight:700;font-family:var(--mono)">${crew.length}</span>
+        <span style="font-size:11px;color:var(--text-muted)">ON SITE</span>
+      </div>
+      ${pm?`<div style="font-size:11px;color:var(--text-muted)">PM: ${pm.name}</div>`:''}
+    </div>`;
+  });
+
+  const recentReqs=myReqs.slice().sort((a,b)=>b.id>a.id?1:-1).slice(0,5);
+  const recentHTML=recentReqs.length?recentReqs.map(r=>{
+    const fromJ=jobById(r.from_job_id),toJ=jobById(r.to_job_id);
+    return`<tr>
+      <td><span class="badge badge-${r.direction}">${r.direction==='in'?'IN':'OUT'}</span></td>
+      <td style="font-weight:600">${r.request_type==='person'?r.worker_name:(r.qty+' x '+r.role_requested)}</td>
+      <td style="color:var(--text-muted)">${fromJ.short_name||fromJ.name} &#x2192; ${toJ.short_name||toJ.name}</td>
+      <td><span class="badge badge-${r.priority.toLowerCase()}">${r.priority}</span></td>
+      <td><span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></td>
+      <td><button class="btn-ghost" onclick="UI.selReqId='${r.id}';setScreen('requests')">View</button></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:24px">No requests yet</td></tr>`;
+
+  $('screen-area').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:22px">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Workers</div>
+        <div class="kpi-val">${totalWorkers}</div>
+        <div class="kpi-sub">${onSite} on site today</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Open Requests</div>
+        <div class="kpi-val" style="color:var(--amber)">${isAdmin()?pendingReqs:myPending}</div>
+        <div class="kpi-sub">Pending approval</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Jobs</div>
+        <div class="kpi-val">${DATA.jobs.filter(j=>j.status==='Active').length}</div>
+        <div class="kpi-sub">${DATA.jobs.length} total jobs</div>
+      </div>
+      ${!isAdmin()?`<div class="kpi-card" style="cursor:pointer;border-color:var(--red)" onclick="openRequestModal()">
+        <div class="kpi-label">Quick Action</div>
+        <div style="font-size:15px;font-weight:700;margin-top:8px;color:var(--red)">+ New Request</div>
+        <div class="kpi-sub">Submit manpower request</div>
+      </div>`:''}
+    </div>
+
+    ${showJobs.length?`<div style="margin-bottom:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text-sec)">MY JOBS</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">${jobsHTML}</div>
+    </div>`:''}
+
+    <div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
+        <span style="font-size:14px;font-weight:700">Recent Requests</span>
+        ${isPM()?`<button class="btn-red" style="padding:7px 13px;font-size:12px" onclick="openRequestModal()">+ New Request</button>`:''}
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table" style="min-width:500px">
+          <thead><tr><th>Dir</th><th>Subject</th><th>Route</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+          <tbody>${recentHTML}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCREEN: SCHEDULE (Gantt)
+// ═══════════════════════════════════════════════════════════════
+const RANGE_START=new Date('2026-02-02T00:00:00');
+const RANGE_END=new Date('2026-07-31T00:00:00');
+const DAY_MS=86400000;
+const PX={Day:18,Week:6.2,Month:2.4};
+const MONTHS_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const ROLE_ORDER=['General Foreman','Foreman','Subforeman','Journeyman','Apprentice','Master Electrician'];
+
+function renderSchedule(){
+  const zoom=UI.zoom;
+  const ppd=PX[zoom];
+  const width=Math.ceil((RANGE_END-RANGE_START)/DAY_MS*ppd);
+  const todayX=Math.round((TODAY_DT-RANGE_START)/DAY_MS*ppd);
+
+  const months=[];
+  let mc=new Date(RANGE_START);mc.setDate(1);
+  while(mc<=RANGE_END){months.push({label:MONTHS_SHORT[mc.getMonth()].toUpperCase()+" '"+String(mc.getFullYear()).slice(2),x:Math.round((mc-RANGE_START)/DAY_MS*ppd)});mc.setMonth(mc.getMonth()+1);}
+
+  const weeks=[];
+  if(zoom!=='Month'){let w=new Date(RANGE_START);while(w<=RANGE_END){const wx=Math.round((w-RANGE_START)/DAY_MS*ppd);if(wx>0)weeks.push(wx);w=new Date(w.getTime()+7*DAY_MS);}}
+
+  const groups=ROLE_ORDER.map(role=>({role,people:DATA.workers.filter(w=>w.trade_class===role)})).filter(g=>g.people.length);
+
+  let labelsHTML='<div class="gantt-corner"><span style="font-family:var(--mono);font-size:10px;color:var(--text-label)">CREW / ROLE</span></div>';
+  let timelineHTML=`<div class="gantt-timeline-header" style="width:${width}px;position:relative">
+    ${months.map(m=>`<div style="position:absolute;left:${m.x+5}px;top:0;height:100%;display:flex;align-items:center"><span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-sec);white-space:nowrap">${m.label}</span></div>`).join('')}
+    <div style="position:absolute;left:${todayX}px;top:0;bottom:0;display:flex;align-items:center;transform:translateX(-50%);z-index:3">
+      <div style="background:var(--red);color:#fff;font-family:var(--mono);font-size:9px;font-weight:700;padding:3px 6px;border-radius:4px;white-space:nowrap">TODAY &middot; JUN 26</div>
+    </div>
+  </div>`;
+
+  let gridHTML=`<div style="position:absolute;top:44px;left:0;right:0;bottom:0;pointer-events:none">
+    ${months.map((m,i)=>i>0?`<div style="position:absolute;top:0;bottom:0;left:${m.x}px;width:1px;background:var(--border)"></div>`:'').join('')}
+    ${weeks.map(wx=>`<div style="position:absolute;top:0;bottom:0;left:${wx}px;width:1px;background:rgba(255,255,255,.04)"></div>`).join('')}
+    <div style="position:absolute;top:0;bottom:0;left:${todayX}px;width:2px;background:var(--red);opacity:.7"></div>
+  </div>`;
+
+  groups.forEach(g=>{
+    labelsHTML+=`<div class="gantt-group-row"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-sec);letter-spacing:.5px">${g.role}</span><span style="font-family:var(--mono);font-size:10px;color:var(--text-label)">${g.people.length}</span></div>`;
+    timelineHTML+=`<div style="height:28px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);border-top:1px solid var(--border);position:relative">${gridHTML}</div>`;
+
+    g.people.forEach(p=>{
+      const cj=currentJob(p);const j=jobById(cj);
+      labelsHTML+=`<div class="gantt-person-row">
+        <span class="color-dot" style="background:${j.color}"></span>
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text-label)">${cj==='YARD'?'AVAILABLE':j.number||cj}</div>
+        </div>
+      </div>`;
+
+      const workerAssigns=DATA.assignments.filter(a=>a.worker_id===p.id).sort((a,b)=>a.start_date<b.start_date?-1:1);
+      let bars='';
+      workerAssigns.forEach((a,idx)=>{
+        const jj=jobById(a.job_id);
+        const sd=new Date(a.start_date+'T00:00:00');
+        const ed=a.is_permanent?RANGE_END:new Date((a.end_date||'2026-07-31')+'T00:00:00');
+        const x0=Math.max(0,Math.round((sd-RANGE_START)/DAY_MS*ppd));
+        const x1=Math.min(width,Math.round((ed-RANGE_START)/DAY_MS*ppd));
+        const hEnd=Math.min(x1,todayX);
+        if(x0<hEnd){const bw=hEnd-x0;bars+=`<div style="position:absolute;left:${x0}px;top:11px;height:22px;width:${bw}px;background:${jj.color};border-radius:5px;display:flex;align-items:center;overflow:hidden;padding:0 6px;box-shadow:0 1px 3px rgba(0,0,0,.3)">${bw>36?`<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;white-space:nowrap">${jj.number||a.job_id}</span>`:''}</div>`;}
+        const ps=Math.max(x0,todayX);
+        if(ps<x1){const bw=x1-ps;bars+=`<div style="position:absolute;left:${ps}px;top:11px;height:22px;width:${bw}px;border-radius:5px;border:1px dashed ${jj.color};background:repeating-linear-gradient(45deg,${jj.color}22 0 4px,${jj.color}08 4px 8px);display:flex;align-items:center;overflow:hidden;padding:0 6px">${bw>36?`<span style="font-family:var(--mono);font-size:10px;font-weight:700;color:${jj.color};white-space:nowrap">${jj.number||a.job_id}</span>`:''}</div>`;}
+      });
+      timelineHTML+=`<div style="height:44px;border-bottom:1px solid var(--border-hairline);position:relative">${gridHTML}${bars}</div>`;
+    });
+  });
+
+  if(!groups.length){
+    $('screen-area').innerHTML=`<div class="empty-state"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><h3>No workers yet</h3><p>Add workers to the roster to see their schedule here.</p>${isAdmin()?`<button class="btn-red" onclick="setScreen('roster')">Go to Roster</button>`:''}</div>`;
+    return;
+  }
+
+  const zoomBtns=['Day','Week','Month'].map(z=>`<button onclick="UI.zoom='${z}';renderSchedule()" style="font-family:var(--mono);font-size:12px;font-weight:700;padding:6px 14px;border-radius:6px;border:none;background:${zoom===z?'var(--red)':'transparent'};color:${zoom===z?'#fff':'var(--text-muted)'};cursor:pointer">${z}</button>`).join('');
+
+  $('screen-area').innerHTML=`
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:16px;font-weight:700">Crew Timeline</div>
+        <div style="font-size:12px;color:var(--text-muted);font-family:var(--mono);margin-top:3px">FEB &ndash; JUL 2026 &middot; RETROSPECTIVE + PROJECTED</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-muted)"><span style="width:20px;height:10px;border-radius:3px;background:var(--text-muted);display:inline-block"></span>ASSIGNED</div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-muted)"><span style="width:20px;height:10px;border-radius:3px;border:1px dashed var(--text-faint);display:inline-block"></span>PROJECTED</div>
+        <div style="display:flex;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px">${zoomBtns}</div>
+        ${isAdmin()||isPM()?`<button class="btn-red" style="padding:7px 13px;font-size:12px" onclick="openAssignModal()">+ Assign</button>`:''}
+      </div>
+    </div>
+    <div class="gantt-wrap">
+      <div class="gantt-inner">
+        <div class="gantt-labels">${labelsHTML}</div>
+        <div style="position:relative;flex-shrink:0;width:${width}px">${timelineHTML}</div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCREEN: REQUESTS
+// ═══════════════════════════════════════════════════════════════
+function renderRequests(){
+  const all=DATA.requests;
+  const myJob=myJobId();
+  const visible=isAdmin()?all:all.filter(r=>r.from_job_id===myJob||r.to_job_id===myJob);
+  const filtered=UI.reqTab==='all'?visible:visible.filter(r=>{
+    if(UI.reqTab==='in')return r.direction==='in';
+    if(UI.reqTab==='out')return r.direction==='out';
+    if(UI.reqTab==='pending')return r.status==='Pending';
+    return true;
+  });
+
+  const sel=UI.selReqId?DATA.requests.find(r=>r.id===UI.selReqId):filtered[0];
+  if(filtered.length&&!UI.selReqId)UI.selReqId=filtered[0]?.id;
+
+  const tabStyle=t=>`padding:8px 14px;border:none;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer;background:${UI.reqTab===t?'var(--panel-2)':'transparent'};color:${UI.reqTab===t?'var(--text)':'var(--text-muted)'};border:${UI.reqTab===t?'1px solid var(--border)':'1px solid transparent'}`;
+
+  const listHTML=filtered.length?filtered.map(r=>{
+    const fromJ=jobById(r.from_job_id),toJ=jobById(r.to_job_id);
+    const isSelected=r.id===UI.selReqId;
+    return`<button class="req-card${isSelected?' selected':''}" onclick="UI.selReqId='${r.id}';renderRequests()">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+        <span class="badge badge-${r.direction}">${r.direction==='in'?'INCOMING':'OUTGOING'}</span>
+        <span class="badge badge-${r.status.toLowerCase()}">${r.status}</span>
+      </div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:2px">${r.request_type==='person'?r.worker_name:(r.qty+' \u00d7 '+r.role_requested)}</div>
+      <div style="font-size:11px;color:var(--text-muted);font-family:var(--mono);margin-bottom:10px">${r.request_type==='person'?r.worker_role:'Role request \u00b7 '+(r.is_permanent?'permanent':'temporary')}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <span style="font-size:12px;color:var(--text-sec);font-family:var(--mono)">${fromJ.short_name||fromJ.name} \u2192 ${toJ.short_name||toJ.name}</span>
+        <span class="badge badge-${r.priority.toLowerCase()}">${r.priority}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-faint);font-family:var(--mono);margin-top:8px">${r.submitted_at}</div>
+    </button>`;
+  }).join(''):`<div class="empty-state"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 9h16M16 5l4 4-4 4M20 15H4M8 11l-4 4 4 4"/></svg><h3>No requests</h3><p>No manpower requests match this filter.</p></div>`;
+
+  let detailHTML='<div class="detail-pane" style="color:var(--text-muted);display:flex;align-items:center;justify-content:center;min-height:200px;font-size:14px">Select a request to view details</div>';
+  if(sel){
+    const fromJ=jobById(sel.from_job_id),toJ=jobById(sel.to_job_id);
+    const counterAcc=accountById(sel.counter_pm_id);
+    const submitter=accountById(sel.submitted_by);
+    const isMyRequest=sel.from_job_id===myJob||sel.submitted_by===ME.id;
+    const isIncoming=sel.direction==='in';
+    const canApprove=isPM()&&sel.status==='Pending'&&isIncoming&&!isMyRequest;
+    const canEdit=(sel.submitted_by===ME.id||isAdmin())&&sel.status==='Pending';
+    const dateStr=sel.is_permanent?'Permanent transfer':(fmtDate(sel.start_date)+' \u2013 '+fmtDate(sel.end_date));
+    const durDays=!sel.is_permanent&&sel.start_date&&sel.end_date?daysDiff(sel.start_date,sel.end_date)+' calendar days':'No end date';
+
+    detailHTML=`<div class="detail-pane">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span class="badge badge-${sel.direction}">${sel.direction==='in'?'INCOMING':'OUTGOING'}</span>
+        <span class="badge badge-${sel.status.toLowerCase()}">${sel.status}</span>
+        <span class="badge badge-${sel.priority.toLowerCase()}" style="margin-left:auto">${sel.priority}</span>
+      </div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px">${sel.request_type==='person'?sel.worker_name:(sel.qty+' \u00d7 '+sel.role_requested)}</div>
+      <div style="font-size:12px;color:var(--text-muted);font-family:var(--mono);margin-bottom:20px">${sel.request_type==='person'?sel.worker_role:'Role request \u00b7 '+(sel.is_permanent?'permanent':'temporary')}</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;border-top:1px solid var(--border);padding-top:18px">
+        <div class="detail-field"><div class="detail-label">Releasing Job</div><div class="detail-val">${fromJ.name}</div><div class="detail-sub">${accountById(fromJ.pm_id)?.name||'—'}</div></div>
+        <div class="detail-field"><div class="detail-label">Receiving Job</div><div class="detail-val">${toJ.name}</div><div class="detail-sub">${accountById(toJ.pm_id)?.name||'—'}</div></div>
+        <div class="detail-field"><div class="detail-label">Duration</div><div class="detail-val">${dateStr}</div><div class="detail-sub">${durDays}</div></div>
+        <div class="detail-field"><div class="detail-label">Submitted</div><div class="detail-val">${sel.submitted_at||'—'}</div><div class="detail-sub">${submitter?.name||'—'}</div></div>
+        ${counterAcc?`<div class="detail-field" style="grid-column:span 2"><div class="detail-label">Counter PM</div><div class="detail-val">${counterAcc.name}</div></div>`:''}
+      </div>
+
+      ${sel.note?`<div style="background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:16px">
+        <div class="detail-label" style="margin-bottom:6px">Note</div>
+        <div style="font-size:13px;line-height:1.6;color:var(--text-sec)">${sel.note}</div>
+      </div>`:''}
+
+      <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+        ${canApprove?`<button class="btn-red" style="flex:1" onclick="resolveRequest('${sel.id}','Approved')">Approve Release</button><button class="btn-outline" style="flex:1" onclick="resolveRequest('${sel.id}','Denied')">Deny</button>`:''}
+        ${canEdit?`<button class="btn-outline" onclick="openEditRequest('${sel.id}')">Edit</button>`:''}
+        ${isAdmin()?`<button class="btn-ghost" style="color:var(--text-faint)" onclick="deleteRequest('${sel.id}')">Delete</button>`:''}
+        ${sel.status!=='Pending'?`<div style="flex:1;text-align:center;font-family:var(--mono);font-size:12px;color:var(--text-muted);padding:13px;border:1px dashed var(--border);border-radius:9px">${sel.status==='Approved'?'Approved \u2014 crew movement scheduled':('Denied by '+(counterAcc?.name||'PM'))}</div>`:''}
+      </div>
+    </div>`;
+  }
+
+  $('screen-area').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap">
+      <div style="display:flex;gap:4px;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:4px">
+        <button style="${tabStyle('all')}" onclick="UI.reqTab='all';renderRequests()">All</button>
+        <button style="${tabStyle('in')}" onclick="UI.reqTab='in';renderRequests()">Incoming</button>
+        <button style="${tabStyle('out')}" onclick="UI.reqTab='out';renderRequests()">Outgoing</button>
+        <button style="${tabStyle('pending')}" onclick="UI.reqTab='pending';renderRequests()">Pending</button>
+      </div>
+      ${isPM()?`<button class="btn-red" onclick="openRequestModal()">+ New Request</button>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:10px">${listHTML}</div>
+      <div>${detailHTML}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCREEN: ROSTER
+// ═══════════════════════════════════════════════════════════════
+function renderRoster(){
+  const projectOrder=[...DATA.jobs.map(j=>j.id),'YARD'];
+  const groups=projectOrder.map(jobId=>{
+    const job=jobById(jobId);
+    const people=DATA.workers.filter(w=>currentJob(w)===jobId);
+    return{job,people};
+  }).filter(g=>g.people.length);
+
+  const onSite=DATA.workers.filter(w=>currentJob(w)!=='YARD').length;
+  const avail=DATA.workers.filter(w=>currentJob(w)==='YARD').length;
+  const pendingNames=new Set(DATA.requests.filter(r=>r.status==='Pending'&&r.request_type==='person').map(r=>r.worker_name));
+
+  const groupsHTML=groups.map(({job,people})=>`
+    <div style="margin-bottom:26px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span class="color-dot" style="background:${job.color};width:12px;height:12px;border-radius:3px"></span>
+        <h3 style="font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase">${job.id==='YARD'?'Yard / Available':job.name}</h3>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text-label)">${people.length}</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        ${isAdmin()||isPM()?`<button class="btn-ghost" style="font-size:11px" onclick="openAssignModalForJob('${job.id}')">+ Assign</button>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:11px">
+        ${people.map((p,i)=>{
+          const isAvail=currentJob(p)==='YARD';
+          let status=isAvail?'Available':'On site';
+          if(pendingNames.has(p.name))status='Requested';
+          const sc={Onsite:['#DCFCE7','#166534'],Available:[`rgba(226,20,60,.12)`,'var(--red)'],Requested:['#FEF3C7','#92400E']}[status.replace(' ','')]||['rgba(255,255,255,.06)','var(--text-muted)'];
+          return`<div style="background:var(--panel-2);border:1px solid var(--border);border-radius:11px;padding:14px;display:flex;gap:12px;align-items:center">
+            <div style="width:40px;height:40px;border-radius:10px;flex-shrink:0;background:${isAvail?'var(--border)':job.color};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">${p.initials||initials(p.name)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+              <span style="display:inline-block;background:rgba(255,255,255,.08);color:var(--text-muted);font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px">${p.trade_class}</span>
+              ${p.phone?`<div style="font-size:11px;color:var(--text-label);font-family:var(--mono);margin-top:5px">${p.phone}</div>`:''}
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span class="badge" style="background:${sc[0]};color:${sc[1]}">${status.toUpperCase()}</span>
+              ${isAdmin()||isPM()?`<div style="display:flex;gap:4px"><button class="btn-ghost" style="font-size:10px;padding:3px 6px" onclick="openAssignModalForWorker('${p.id}')">Assign</button><button class="btn-ghost" style="font-size:10px;padding:3px 6px" onclick="openEditWorker('${p.id}')">Edit</button></div>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+
+  $('screen-area').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px;flex-wrap:wrap">
+      <div style="display:flex;gap:16px;font-family:var(--mono);font-size:12px;font-weight:700">
+        <span style="color:var(--text-muted)">${DATA.workers.length} WORKERS</span>
+        <span style="color:var(--green)">${onSite} ON SITE</span>
+        <span style="color:var(--red)">${avail} AVAILABLE</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        ${isAdmin()||isPM()?`<button class="btn-outline" onclick="openAssignModal()">+ Assign to Job</button>`:''}
+        ${isAdmin()?`<button class="btn-red" onclick="openNewWorker()">+ Add Worker</button>`:''}
+      </div>
+    </div>
+    ${groups.length?groupsHTML:`<div class="empty-state"><svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><h3>No workers yet</h3><p>Add workers to the roster to get started.</p>${isAdmin()?`<button class="btn-red" onclick="openNewWorker()">Add Worker</button>`:''}</div>`}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCREEN: JOBS — two-panel crew management view
+// ═══════════════════════════════════════════════════════════════
+let selectedJobId=null;
+
+function renderJobs(){
+  const jobs=isAdmin()?DATA.jobs:DATA.jobs.filter(j=>j.pm_id===ME.id||j.id===myJobId());
+  if(!selectedJobId&&jobs.length)selectedJobId=jobs[0].id;
+  const selJob=jobs.find(j=>j.id===selectedJobId)||jobs[0];
+
+  const listHTML=jobs.map(j=>{
+    const crew=DATA.workers.filter(w=>currentJob(w)===j.id);
+    const pqs=DATA.requests.filter(r=>(r.from_job_id===j.id||r.to_job_id===j.id)&&r.status==='Pending');
+    const active=j.id===selectedJobId;
+    return`<button onclick="selectedJobId='${j.id}';renderJobs()" style="width:100%;text-align:left;padding:14px 16px;background:${active?'rgba(226,20,60,.06)':'transparent'};border:none;border-left:3px solid ${active?'var(--red)':'transparent'};border-bottom:1px solid var(--border);cursor:pointer;transition:all .12s">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <span class="color-dot" style="background:${j.color}"></span>
+        <span style="font-size:14px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)">${j.name}</span>
+        <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${j.status==='Active'?'rgba(22,163,74,.12)':'rgba(0,0,0,.06)'};color:${j.status==='Active'?'#16a34a':'var(--text-muted)'}">${j.status}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--text-muted);font-family:var(--mono)">${crew.length} crew</span>
+        ${pqs.length?`<span class="badge badge-pending">${pqs.length} pending</span>`:''}
+      </div>
+    </button>`;
+  }).join('');
+
+  let detailHTML='<div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-muted);font-size:14px">Select a job to view crew</div>';
+  if(selJob){
+    const crew=DATA.workers.filter(w=>currentJob(w)===selJob.id);
+    const pm=accountById(selJob.pm_id);
+    const pendReqs=DATA.requests.filter(r=>(r.from_job_id===selJob.id||r.to_job_id===selJob.id)&&r.status==='Pending');
+    const pendingNames=new Set(DATA.requests.filter(r=>r.status==='Pending'&&r.request_type==='person').map(r=>r.worker_name));
+
+    const crewRows=crew.length?crew.map(w=>{
+      const assign=DATA.assignments.filter(a=>a.worker_id===w.id&&a.job_id===selJob.id).sort((a,b)=>b.start_date>a.start_date?1:-1)[0];
+      let status='On site';
+      if(pendingNames.has(w.name))status='Requested';
+      const sc={'On site':['#DCFCE7','#166534'],'Requested':['#FEF3C7','#92400E']}[status]||['rgba(0,0,0,.06)','var(--text-muted)'];
+      const sinceStr=assign&&assign.start_date?' \u00b7 since '+fmtDateShort(assign.start_date):'';
+      return`<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border-hairline)">
+        <div style="width:36px;height:36px;border-radius:9px;background:${selJob.color};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${w.initials||initials(w.name)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">${w.name}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${w.trade_class}${sinceStr}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge" style="background:${sc[0]};color:${sc[1]}">${status.toUpperCase()}</span>
+          ${(isAdmin()||isPM())?`<button class="btn-ghost" style="font-size:11px;color:var(--text-muted)" onclick="removeFromJob('${w.id}','${selJob.id}')">Remove</button>`:''}
+        </div>
+      </div>`;
+    }).join(''):'<div style="text-align:center;color:var(--text-muted);padding:24px 0;font-size:13px">No crew assigned \u2014 use <strong>+ Add Crew</strong> to assign workers</div>';
+
+    detailHTML=`
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span class="color-dot" style="background:${selJob.color};width:12px;height:12px;border-radius:3px"></span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--text-label);font-weight:700">${selJob.number||'&mdash;'}</span>
+          </div>
+          <div style="font-size:20px;font-weight:800;margin-bottom:2px">${selJob.name}</div>
+          ${selJob.phase?`<div style="font-size:13px;color:var(--text-muted)">${selJob.phase}</div>`:''}
+          ${selJob.location?`<div style="font-size:12px;color:var(--text-label)">${selJob.location}</div>`:''}
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          ${(isAdmin()||isPM())?`<button class="btn-red" style="font-size:12px" onclick="openAssignToJob('${selJob.id}')">+ Add Crew</button>`:''}
+          ${isAdmin()?`<button class="btn-outline" style="font-size:12px" onclick="openEditJob('${selJob.id}')">Edit Job</button>`:''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div class="kpi-card" style="padding:12px 14px">
+          <div class="kpi-label">Crew on Site</div>
+          <div style="font-family:var(--mono);font-size:24px;font-weight:800;letter-spacing:-1px">${crew.length}</div>
+        </div>
+        <div class="kpi-card" style="padding:12px 14px">
+          <div class="kpi-label">Project Manager</div>
+          <div style="font-size:14px;font-weight:600;margin-top:4px;color:${pm?'var(--text)':'var(--text-muted)'}">${pm?pm.name:'Unassigned'}</div>
+        </div>
+        <div class="kpi-card" style="padding:12px 14px;cursor:pointer" onclick="UI.reqTab='all';setScreen('requests')">
+          <div class="kpi-label">Open Requests</div>
+          <div style="font-family:var(--mono);font-size:24px;font-weight:800;letter-spacing:-1px;color:${pendReqs.length?'var(--amber)':'var(--text-muted)'}">${pendReqs.length}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-label);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono)">Current Crew</div>
+        ${(isAdmin()||isPM())?`<button class="btn-ghost" style="font-size:12px" onclick="UI.reqTab='all';setScreen('requests')">View Requests</button>`:''}
+      </div>
+      <div style="border:1px solid var(--border);border-radius:12px;padding:0 16px">
+        ${crewRows}
+      </div>`;
+  }
+
+  $('screen-area').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:14px;color:var(--text-muted)">${jobs.length} job${jobs.length!==1?'s':''}</div>
+      ${isAdmin()?`<button class="btn-red" onclick="openNewJob()">+ New Job</button>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start">
+      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        ${listHTML||'<div style="padding:24px;text-align:center;color:var(--text-muted)">No jobs yet</div>'}
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px">${detailHTML}</div>
+    </div>`;
+}
+
+function fmtDateShort(d){
+  if(!d)return '';
+  const ms=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const[y,m,dd]=d.split('-');
+  return ms[parseInt(m)-1]+' '+parseInt(dd);
+}
+
+async function removeFromJob(workerId,jobId){
+  if(!confirm('Remove this worker from the job? Their assignment history is preserved.'))return;
+  const todayD=new Date().toISOString().slice(0,10);
+  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const active=DATA.assignments
+    .filter(a=>a.worker_id===workerId&&a.job_id===jobId)
+    .sort((a,b)=>b.start_date>a.start_date?1:-1)
+    .find(a=>a.is_permanent||(!a.end_date||a.end_date>=todayD));
+  if(active){
+    active.end_date=yesterday;
+    active.is_permanent=false;
+    if(SB)await SB.from('mp_assignments').update({end_date:yesterday,is_permanent:false}).eq('id',active.id);
+  }
+  showToast('Worker removed from job');
+  renderJobs();
+}
+
+function openAssignToJob(jobId){
+  preselectedJobId=jobId;
+  populateAssignForm(jobId);
+  openModal('modal-assign');
+}
+
+function openAssignModalForWorker(workerId){
+  preselectedJobId=null;
+  populateAssignForm(null);
+  if($('assign-worker'))$('assign-worker').value=workerId;
+  openModal('modal-assign');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SCREEN: ACCOUNTS
+// ═══════════════════════════════════════════════════════════════
+function renderAccounts(){
+  if(!isAdmin()){$('screen-area').innerHTML='<div class="empty-state"><h3>Access denied</h3><p>Only admins can manage accounts.</p></div>';return;}
+  const rows=DATA.accounts.map(a=>{
+    const isSelf=a.id===ME.id;
+    return`<tr>
+      <td><div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--red-tint);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--red-glyph);flex-shrink:0">${initials(a.name)}</div>
+        <div><div style="font-weight:600">${a.name}${isSelf?' <span style="font-size:10px;color:var(--green);font-weight:700">YOU</span>':''}</div><div style="font-size:11px;color:var(--text-muted)">${a.email}</div></div>
+      </div></td>
+      <td><span class="badge badge-${a.role}">${a.role.toUpperCase()}</span></td>
+      <td>${a.jobId?jobById(a.jobId)?.name:'—'}</td>
+      <td><div style="display:flex;gap:6px">
+        <button class="btn-ghost" onclick="openEditAccount('${a.id}')">Edit</button>
+        ${!isSelf?`<button class="btn-ghost" style="color:var(--text-faint)" onclick="deleteAccount('${a.id}')">Remove</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  $('screen-area').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-size:14px;color:var(--text-muted)">${DATA.accounts.length} accounts</div>
+      <button class="btn-red" onclick="openNewAccount()">+ Add Account</button>
+    </div>
+    <div class="panel">
+      <table class="data-table">
+        <thead><tr><th>Name / Email</th><th>Role</th><th>Home Job</th><th></th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:var(--text-faint);padding:24px">No accounts</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL HELPERS
+// ═══════════════════════════════════════════════════════════════
+function openModal(id){$(id).classList.remove('hidden');}
+function closeModal(id){$(id).classList.add('hidden');}
+
+// ── REQUEST MODAL ──
+let editingReqId=null;
+function openRequestModal(){
+  editingReqId=null;
+  $('modal-request-title').textContent='New Manpower Request';
+  populateRequestForm({});
+  openModal('modal-request');
+}
+function openEditRequest(id){
+  editingReqId=id;
+  const r=DATA.requests.find(x=>x.id===id);
+  $('modal-request-title').textContent='Edit Request';
+  populateRequestForm(r||{});
+  openModal('modal-request');
+}
+function populateRequestForm(r){
+  $('req-dir').value=r.direction||'in';
+  $('req-type').value=r.request_type||'person';
+  $('req-priority').value=r.priority||'Normal';
+  $('req-perm').value=r.is_permanent?'1':'0';
+  $('req-start').value=r.start_date||today();
+  $('req-end').value=r.end_date||'';
+  $('req-qty').value=r.qty||1;
+  $('req-role').value=r.role_requested||'Journeyman';
+  $('req-note').value=r.note||'';
+  $('req-error').style.display='none';
+
+  // Populate worker select
+  const ws=$('req-worker');ws.innerHTML=DATA.workers.map(w=>`<option value="${w.id}"${w.id===r.worker_id?' selected':''}>${w.name} (${w.trade_class})</option>`).join('');
+
+  // Populate job selects
+  const js=j=>`<option value="${j.id}">${j.name}</option>`;
+  $('req-from').innerHTML=DATA.jobs.map(js).join('');
+  $('req-to').innerHTML=DATA.jobs.map(js).join('');
+  if(r.from_job_id)$('req-from').value=r.from_job_id;
+  else if(myJobId())$('req-from').value=myJobId();
+  if(r.to_job_id)$('req-to').value=r.to_job_id;
+
+  // Populate counter PM
+  $('req-counter').innerHTML='<option value="">— Select PM —</option>'+DATA.accounts.filter(a=>a.role==='pm'||a.role==='admin').map(a=>`<option value="${a.id}"${a.id===r.counter_pm_id?' selected':''}>${a.name}</option>`).join('');
+
+  updateRequestForm();
+}
+function updateRequestForm(){
+  const type=$('req-type').value;
+  $('req-person-fields').classList.toggle('hidden',type!=='person');
+  $('req-role-fields').classList.toggle('hidden',type!=='role');
+  $('req-dates').classList.toggle('hidden',$('req-perm').value==='1');
+}
+async function saveRequest(){
+  const dir=$('req-dir').value,type=$('req-type').value;
+  const fromId=$('req-from').value,toId=$('req-to').value;
+  if(!fromId||!toId){$('req-error').textContent='Please select both jobs.';$('req-error').style.display='block';return;}
+  if(fromId===toId){$('req-error').textContent='From and To jobs must be different.';$('req-error').style.display='block';return;}
+  const isPerm=$('req-perm').value==='1';
+  let workerName='',workerRole='',workerId='';
+  if(type==='person'){
+    const w=workerById($('req-worker').value);
+    if(!w){$('req-error').textContent='Please select a worker.';$('req-error').style.display='block';return;}
+    workerName=w.name;workerRole=w.trade_class;workerId=w.id;
+  }
+  const now=new Date();
+  const submitted=now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const row={
+    id:editingReqId||'req'+uid(),
+    direction:dir,request_type:type,
+    worker_id:workerId,worker_name:workerName,worker_role:workerRole,
+    role_requested:type==='role'?$('req-role').value:'',
+    qty:parseInt($('req-qty').value)||1,
+    from_job_id:fromId,to_job_id:toId,
+    counter_pm_id:$('req-counter').value,
+    is_permanent:isPerm,
+    start_date:isPerm?'':$('req-start').value,
+    end_date:isPerm?'':$('req-end').value,
+    priority:$('req-priority').value,status:'Pending',
+    submitted_by:ME.id||null,submitted_at:submitted,
+    note:$('req-note').value.trim(),
+  };
+  if(editingReqId){
+    const idx=DATA.requests.findIndex(r=>r.id===editingReqId);
+    if(idx>=0)DATA.requests[idx]=row;
+  } else {
+    DATA.requests.unshift(row);
+  }
+  const rok=await sbUpsert('mp_requests',{id:row.id,direction:row.direction,request_type:row.request_type,worker_id:row.worker_id||null,worker_name:row.worker_name||null,worker_role:row.worker_role||null,role_requested:row.role_requested||null,qty:row.qty,from_job_id:row.from_job_id,to_job_id:row.to_job_id,counter_pm_id:row.counter_pm_id||null,is_permanent:row.is_permanent,start_date:row.start_date||null,end_date:row.end_date||null,priority:row.priority,status:row.status,submitted_by:row.submitted_by||null,submitted_at:row.submitted_at||null,note:row.note||null});
+  if(!rok){DATA.requests=DATA.requests.filter(r=>r.id!==row.id);return;}
+  UI.selReqId=row.id;
+  closeModal('modal-request');
+  showToast(editingReqId?'Request updated':'Request submitted');
+  setScreen('requests');
+}
+
+async function resolveRequest(id,status){
+  const r=DATA.requests.find(x=>x.id===id);if(!r)return;
+  r.status=status;
+  if(SB)await SB.from('mp_requests').update({status,resolved_at:Date.now(),resolved_by:ME.id||null}).eq('id',id);
+  showToast(status==='Approved'?'Request approved — crew movement scheduled':'Request denied');
+  renderRequests();
+}
+
+async function deleteRequest(id){
+  if(!confirm('Delete this request? This cannot be undone.'))return;
+  DATA.requests=DATA.requests.filter(r=>r.id!==id);
+  await sbDelete('mp_requests',id);
+  UI.selReqId=null;
+  showToast('Request deleted');
+  renderRequests();
+}
+
+// ── JOB MODAL ──
+let editingJobId=null;
+function openNewJob(){editingJobId=null;$('modal-job-title').textContent='New Job';populateJobForm({});openModal('modal-job');}
+function openEditJob(id){editingJobId=id;$('modal-job-title').textContent='Edit Job';populateJobForm(DATA.jobs.find(j=>j.id===id)||{});openModal('modal-job');}
+function populateJobForm(j){
+  $('job-name').value=j.name||'';$('job-short').value=j.short_name||'';
+  $('job-number').value=j.number||'';$('job-location').value=j.location||'';
+  $('job-phase').value=j.phase||'';$('job-status').value=j.status||'Active';
+  $('job-color').value=j.color||'#E2123C';$('job-start').value=j.start_date||'';
+  $('job-error').style.display='none';
+  $('job-pm').innerHTML='<option value="">— No PM —</option>'+DATA.accounts.filter(a=>a.role==='pm'||a.role==='admin').map(a=>`<option value="${a.id}"${a.id===j.pm_id?' selected':''}>${a.name}</option>`).join('');
+}
+async function saveJob(){
+  const name=$('job-name').value.trim();
+  if(!name){$('job-error').textContent='Job name is required.';$('job-error').style.display='block';return;}
+  const row={id:editingJobId||'j'+uid(),name,short_name:$('job-short').value.trim()||name,number:$('job-number').value.trim()||null,location:$('job-location').value.trim()||null,phase:$('job-phase').value.trim()||null,status:$('job-status').value,pm_id:$('job-pm').value||null,color:$('job-color').value,start_date:$('job-start').value||null};
+  if(editingJobId){const idx=DATA.jobs.findIndex(j=>j.id===editingJobId);if(idx>=0)DATA.jobs[idx]=row;}
+  else DATA.jobs.push(row);
+  const ok=await sbUpsert('mp_jobs',{id:row.id,name:row.name,short_name:row.short_name,number:row.number,location:row.location,phase:row.phase,status:row.status,pm_id:row.pm_id,color:row.color,start_date:row.start_date});
+  if(!ok){if(!editingJobId)DATA.jobs=DATA.jobs.filter(j=>j.id!==row.id);return;}
+  closeModal('modal-job');showToast(editingJobId?'Job updated':'Job created');render();
+}
+
+// ── WORKER MODAL ──
+let editingWorkerId=null;
+function openNewWorker(){editingWorkerId=null;$('modal-worker-title').textContent='Add Worker';['wk-first','wk-last','wk-phone'].forEach(id=>$(id).value='');$('wk-trade').value='Journeyman';$('wk-error').style.display='none';openModal('modal-worker');}
+function openEditWorker(id){
+  editingWorkerId=id;
+  const w=DATA.workers.find(x=>x.id===id);if(!w)return;
+  $('modal-worker-title').textContent='Edit Worker';
+  const parts=w.name.split(' ');
+  $('wk-first').value=parts[0]||'';$('wk-last').value=parts.slice(1).join(' ')||'';
+  $('wk-trade').value=w.trade_class;$('wk-phone').value=w.phone||'';
+  $('wk-error').style.display='none';
+  openModal('modal-worker');
+}
+async function saveWorker(){
+  const first=$('wk-first').value.trim(),last=$('wk-last').value.trim();
+  if(!first){$('wk-error').textContent='First name required.';$('wk-error').style.display='block';return;}
+  const name=(first+' '+last).trim();
+  const row={id:editingWorkerId||'w'+uid(),name,initials:initials(name),trade_class:$('wk-trade').value,phone:$('wk-phone').value.trim(),rates:{}};
+  if(editingWorkerId){const idx=DATA.workers.findIndex(w=>w.id===editingWorkerId);if(idx>=0)DATA.workers[idx]={...DATA.workers[idx],...row};}
+  else DATA.workers.push(row);
+  const wok=await sbUpsert('workers',{id:row.id,name:row.name,initials:row.initials,trade_class:row.trade_class,phone:row.phone||null});
+  if(!wok){if(!editingWorkerId)DATA.workers=DATA.workers.filter(w=>w.id!==row.id);return;}
+  closeModal('modal-worker');showToast(editingWorkerId?'Worker updated':'Worker added');render();
+}
+
+// ── ASSIGNMENT MODAL ──
+let preselectedJobId=null;
+function openAssignModal(){preselectedJobId=null;populateAssignForm(null);openModal('modal-assign');}
+function openAssignModalForJob(jobId){preselectedJobId=jobId;populateAssignForm(jobId);openModal('modal-assign');}
+function populateAssignForm(forJobId){
+  const jid=forJobId||preselectedJobId||'';
+  $('assign-worker').innerHTML=DATA.workers.map(w=>{const cj=currentJob(w);const onThis=jid&&cj===jid;const label=w.name+' ('+w.trade_class+')'+(onThis?' — already here':(cj!=='YARD'?' — on '+jobById(cj).name:''));return`<option value="${w.id}">${label}</option>`;}).join('');
+  $('assign-job').innerHTML=DATA.jobs.map(j=>`<option value="${j.id}"${j.id===jid?' selected':''}>${j.name}</option>`).join('');
+  $('assign-start').value=today();$('assign-end').value='';$('assign-perm').value='0';
+  $('assign-end-wrap').classList.remove('hidden');$('assign-error').style.display='none';
+}
+async function saveAssignment(){
+  const wid=$('assign-worker').value,jid=$('assign-job').value,start=$('assign-start').value;
+  if(!wid||!jid||!start){$('assign-error').textContent='Worker, job, and start date are required.';$('assign-error').style.display='block';return;}
+  const isPerm=$('assign-perm').value==='1';
+  const row={id:'a'+uid(),worker_id:wid,job_id:jid,start_date:start,end_date:isPerm?null:($('assign-end').value||null),is_permanent:isPerm};
+  DATA.assignments.push(row);
+  const aok=await sbUpsert('mp_assignments',{id:row.id,worker_id:row.worker_id,job_id:row.job_id,start_date:row.start_date,end_date:row.end_date||null,is_permanent:row.is_permanent});
+  if(!aok){DATA.assignments=DATA.assignments.filter(a=>a.id!==row.id);return;}
+  closeModal('modal-assign');showToast('Worker assigned');render();
+}
+
+// ── ACCOUNT MODAL ──
+let editingAccId=null;
+function openNewAccount(){editingAccId=null;$('modal-account-title').textContent='Add Account';$('acc-save-btn').textContent='Add Account';['acc-first','acc-last','acc-email','acc-password','acc-password2'].forEach(id=>$(id).value='');$('acc-role').value='pm';$('acc-error').style.display='none';$('acc-pw-wrap').style.display='';$('acc-pw2-wrap').style.display='';populateAccJobSelect();openModal('modal-account');}
+function openEditAccount(id){
+  editingAccId=id;
+  const a=DATA.accounts.find(x=>x.id===id);if(!a)return;
+  $('modal-account-title').textContent='Edit Account';$('acc-save-btn').textContent='Save Changes';
+  const parts=(a.name||'').split(' ');
+  $('acc-first').value=parts[0]||a.first_name||'';$('acc-last').value=parts.slice(1).join(' ')||a.last_name||'';
+  $('acc-email').value=a.email;$('acc-role').value=a.role;
+  $('acc-password').value='';$('acc-password2').value='';
+  $('acc-pw-wrap').querySelector('label').textContent='New Password (leave blank to keep)';
+  $('acc-error').style.display='none';
+  populateAccJobSelect(a.jobId);
+  openModal('modal-account');
+}
+function populateAccJobSelect(sel){
+  $('acc-job').innerHTML='<option value="">— No specific job —</option>'+DATA.jobs.map(j=>`<option value="${j.id}"${j.id===sel?' selected':''}>${j.name}</option>`).join('');
+}
+async function saveAccount(){
+  const first=$('acc-first').value.trim(),last=$('acc-last').value.trim();
+  const email=$('acc-email').value.trim().toLowerCase();
+  const pw=$('acc-password').value,pw2=$('acc-password2').value;
+  const role=$('acc-role').value,jobId=$('acc-job').value;
+  const showErr=msg=>{$('acc-error').textContent=msg;$('acc-error').style.display='block';};
+  if(!first||!last){showErr('Full name required.');return;}
+  if(!email){showErr('Email required.');return;}
+  if(!editingAccId&&pw.length<6){showErr('Password must be at least 6 characters.');return;}
+  if(pw&&pw!==pw2){showErr('Passwords do not match.');return;}
+  if(DATA.accounts.find(a=>a.email===email&&a.id!==editingAccId)){showErr('Email already in use.');return;}
+  const name=(first+' '+last).trim();
+  const pwHash=pw?hashPw(pw):(editingAccId?DATA.accounts.find(a=>a.id===editingAccId)?.passwordHash:'');
+  const row={id:editingAccId||'u'+uid(),name,first_name:first,last_name:last,email,passwordHash:pwHash,role,jobId};
+  if(editingAccId){const idx=DATA.accounts.findIndex(a=>a.id===editingAccId);if(idx>=0)DATA.accounts[idx]=row;}
+  else DATA.accounts.push(row);
+  const acok=await sbUpsert('accounts',{id:row.id,first_name:first,last_name:last,email,password_hash:pwHash,role,project_id:jobId||null});
+  if(!acok){if(!editingAccId)DATA.accounts=DATA.accounts.filter(a=>a.id!==row.id);return;}
+  saveLocalAccounts(DATA.accounts.map(a=>({id:a.id,firstName:a.first_name||a.name?.split(' ')[0],lastName:a.last_name||a.name?.split(' ').slice(1).join(' '),email:a.email,passwordHash:a.passwordHash,role:a.role})));
+  closeModal('modal-account');showToast(editingAccId?'Account updated':'Account created');renderAccounts();
+}
+async function deleteAccount(id){
+  if(id===ME.id){showToast("You can't delete your own account.",true);return;}
+  if(!confirm('Remove this account? They will no longer be able to sign in.'))return;
+  DATA.accounts=DATA.accounts.filter(a=>a.id!==id);
+  await sbDelete('accounts',id);
+  showToast('Account removed');renderAccounts();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+(async function boot(){
+  // Supabase SDK loaded synchronously in head — no async race
+  if(window.supabase){
+    SB=window.supabase.createClient(SB_URL,SB_KEY);
+  } else {
+    console.error('Supabase SDK failed to load');
+  }
+
+  // Load all live data — this will surface schema errors visibly if tables are missing
+  await loadData();
+  initRealtime();
+
+  // Seed default admin account if the accounts table is empty
+  if(!DATA.accounts.length && !schemaErrorShown){
+    const def={
+      id:'u1',first_name:'Admin',last_name:'User',name:'Admin User',
+      email:'admin@dinto.com',passwordHash:hashPw('dinto123'),role:'admin',jobId:'',
+    };
+    DATA.accounts.push(def);
+    await sbUpsert('accounts',{
+      id:def.id,first_name:def.first_name,last_name:def.last_name,
+      email:def.email,password_hash:def.passwordHash,role:def.role,project_id:null,
+    });
+    saveLocalAccounts([{
+      id:def.id,firstName:def.first_name,lastName:def.last_name,
+      email:def.email,passwordHash:def.passwordHash,role:def.role,
+    }]);
+  }
+
+  if(schemaErrorShown)return; // stop here — user needs to run schema.sql first
+
+  // Hide loading overlay
+  const ov=document.getElementById('loading-overlay');
+  if(ov){ov.classList.add('fade');setTimeout(()=>ov.style.display='none',350);}
+
+  // Restore previous session (keeps user logged in across refreshes/tabs)
+  try{
+    const saved=JSON.parse(localStorage.getItem(SESSION_KEY)||'{}');
+    if(saved.id&&saved.name){
+      ME=Object.assign({loggedIn:true},saved);
+      launchApp();
+      return;
+    }
+  }catch(e){console.warn('Session restore:',e);}
+
+  document.getElementById('login-screen').style.display='flex';
+})()
+</script>
+</body>
+</html>
