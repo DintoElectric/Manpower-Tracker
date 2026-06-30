@@ -267,10 +267,10 @@ input,select,textarea{font-family:inherit}
     <div class="modal-body">
       <div class="form-row">
         <div class="form-field">
-          <label class="form-label">Direction</label>
-          <select class="form-select" id="req-dir" onchange="updateRequestForm()">
-            <option value="in">Incoming — I need crew</option>
-            <option value="out">Outgoing — I'm releasing crew</option>
+          <label class="form-label">What are you doing?</label>
+          <select class="form-select" id="req-intent" onchange="updateRequestForm()">
+            <option value="requesting">Requesting crew FROM another job</option>
+            <option value="releasing">Releasing crew TO another job</option>
           </select>
         </div>
         <div class="form-field">
@@ -304,11 +304,11 @@ input,select,textarea{font-family:inherit}
       </div>
       <div class="form-row">
         <div class="form-field">
-          <label class="form-label">From Job</label>
+          <label class="form-label" id="req-from-label">Releasing Job (has the worker)</label>
           <select class="form-select" id="req-from"></select>
         </div>
         <div class="form-field">
-          <label class="form-label">To Job</label>
+          <label class="form-label" id="req-to-label">Receiving Job (needs the worker)</label>
           <select class="form-select" id="req-to"></select>
         </div>
       </div>
@@ -1014,9 +1014,11 @@ function renderRequests(){
   const all=DATA.requests;
   const myJob=myJobId();
   const visible=isAdmin()?all:all.filter(r=>r.from_job_id===myJob||r.to_job_id===myJob);
+  // viewerDir: 'out' = I submitted this, 'in' = another PM sent this to my job
+  function viewerDir(r){return r.submitted_by===ME.id?'out':'in';}
   const filtered=UI.reqTab==='all'?visible:visible.filter(r=>{
-    if(UI.reqTab==='in')return r.direction==='in';
-    if(UI.reqTab==='out')return r.direction==='out';
+    if(UI.reqTab==='in')return viewerDir(r)==='in';
+    if(UI.reqTab==='out')return viewerDir(r)==='out';
     if(UI.reqTab==='pending')return r.status==='Pending';
     return true;
   });
@@ -1031,7 +1033,7 @@ function renderRequests(){
     const isSelected=r.id===UI.selReqId;
     return`<button class="req-card${isSelected?' selected':''}" onclick="UI.selReqId='${r.id}';renderRequests()">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-        <span class="badge badge-${r.direction}">${r.direction==='in'?'INCOMING':'OUTGOING'}</span>
+        <span class="badge badge-${viewerDir(r)}">${viewerDir(r)==='in'?'INCOMING':'OUTGOING'}</span>
         <span class="badge badge-${r.status.toLowerCase()}">${r.status}</span>
       </div>
       <div style="font-size:15px;font-weight:700;margin-bottom:2px">${r.request_type==='person'?r.worker_name:(r.qty+' \u00d7 '+r.role_requested)}</div>
@@ -1049,16 +1051,15 @@ function renderRequests(){
     const fromJ=jobById(sel.from_job_id),toJ=jobById(sel.to_job_id);
     const counterAcc=accountById(sel.counter_pm_id);
     const submitter=accountById(sel.submitted_by);
-    const isMyRequest=sel.from_job_id===myJob||sel.submitted_by===ME.id;
-    const isIncoming=sel.direction==='in';
-    const canApprove=isPM()&&sel.status==='Pending'&&isIncoming&&!isMyRequest;
+    
+    const canApprove=isPM()&&sel.status==='Pending'&&viewerDir(sel)==='in';
     const canEdit=(sel.submitted_by===ME.id||isAdmin())&&sel.status==='Pending';
     const dateStr=sel.is_permanent?'Permanent transfer':(fmtDate(sel.start_date)+' \u2013 '+fmtDate(sel.end_date));
     const durDays=!sel.is_permanent&&sel.start_date&&sel.end_date?daysDiff(sel.start_date,sel.end_date)+' calendar days':'No end date';
 
     detailHTML=`<div class="detail-pane">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-        <span class="badge badge-${sel.direction}">${sel.direction==='in'?'INCOMING':'OUTGOING'}</span>
+        <span class="badge badge-${viewerDir(sel)}">${viewerDir(sel)==='in'?'INCOMING':'OUTGOING'}</span>
         <span class="badge badge-${sel.status.toLowerCase()}">${sel.status}</span>
         <span class="badge badge-${sel.priority.toLowerCase()}" style="margin-left:auto">${sel.priority}</span>
       </div>
@@ -1363,7 +1364,7 @@ function openEditRequest(id){
   openModal('modal-request');
 }
 function populateRequestForm(r){
-  $('req-dir').value=r.direction||'in';
+  if($('req-intent'))$('req-intent').value='requesting';
   $('req-type').value=r.request_type||'person';
   $('req-priority').value=r.priority||'Normal';
   $('req-perm').value=r.is_permanent?'1':'0';
@@ -1395,9 +1396,31 @@ function updateRequestForm(){
   $('req-person-fields').classList.toggle('hidden',type!=='person');
   $('req-role-fields').classList.toggle('hidden',type!=='role');
   $('req-dates').classList.toggle('hidden',$('req-perm').value==='1');
+  const intent=$('req-intent')?$('req-intent').value:'requesting';
+  const myJob=myJobId();
+  // Auto-set my job on the correct side based on intent
+  if(intent==='requesting'){
+    // I need crew: my job RECEIVES, other job RELEASES
+    const toSel=$('req-to');if(toSel&&myJob&&!toSel._userChanged)toSel.value=myJob;
+    const fl=$('req-from-label');if(fl)fl.textContent='Releasing Job (has the worker)';
+    const tl=$('req-to-label');if(tl)tl.textContent='Your Job (receiving)';
+  } else {
+    // I am releasing: my job RELEASES, other job RECEIVES
+    const fromSel=$('req-from');if(fromSel&&myJob&&!fromSel._userChanged)fromSel.value=myJob;
+    const fl=$('req-from-label');if(fl)fl.textContent='Your Job (releasing)';
+    const tl=$('req-to-label');if(tl)tl.textContent='Receiving Job (needs the worker)';
+  }
+  // Auto-suggest counter PM from the other job
+  const otherJobId=intent==='requesting'?$('req-from').value:$('req-to').value;
+  const otherJob=DATA.jobs.find(j=>j.id===otherJobId);
+  const counterSel=$('req-counter');
+  if(otherJob&&otherJob.pm_id&&!counterSel.value){counterSel.value=otherJob.pm_id;}
 }
 async function saveRequest(){
-  const dir=$('req-dir').value,type=$('req-type').value;
+  const intent=$('req-intent')?$('req-intent').value:'requesting';
+  const type=$('req-type').value;
+  // We always store direction='out' from the submitter's perspective.
+  // The receiving PM sees it as 'in' — computed at render time via viewerDir().
   const fromId=$('req-from').value,toId=$('req-to').value;
   if(!fromId||!toId){$('req-error').textContent='Please select both jobs.';$('req-error').style.display='block';return;}
   if(fromId===toId){$('req-error').textContent='From and To jobs must be different.';$('req-error').style.display='block';return;}
@@ -1412,7 +1435,7 @@ async function saveRequest(){
   const submitted=now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const row={
     id:editingReqId||'req'+uid(),
-    direction:dir,request_type:type,
+    direction:'out',request_type:type,
     worker_id:workerId,worker_name:workerName,worker_role:workerRole,
     role_requested:type==='role'?$('req-role').value:'',
     qty:parseInt($('req-qty').value)||1,
