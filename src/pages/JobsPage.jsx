@@ -5,7 +5,7 @@
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
-import { accountById } from '../utils/lookups'
+import { currentJobId, accountById } from '../utils/lookups'
 import { fmtDateShort, shiftDay, todayStr } from '../utils/dates'
 import { isAdmin as checkAdmin, isPm } from '../utils/permissions'
 import { api, ApiError } from '../apiClient'
@@ -67,7 +67,7 @@ export default function JobsPage() {
             <div className="jobs-list-empty">No jobs yet</div>
           ) : (
             visibleJobs.map((j) => {
-              const crew = workers.filter((w) => currentJobIdFor(w, assignments) === j.id)
+              const crew = workers.filter((w) => currentJobId(w, assignments) === j.id)
               const pendingCount = requests.filter((r) => (r.fromJobId === j.id || r.toJobId === j.id) && r.status === 'Pending').length
               const active = j.id === selJob?.id
               return (
@@ -122,19 +122,8 @@ export default function JobsPage() {
   )
 }
 
-function currentJobIdFor(worker, assignments) {
-  const today = todayStr()
-  const mine = assignments.filter((a) => a.workerId === worker.id).sort((a, b) => (a.startDate > b.startDate ? -1 : 1))
-  for (const a of mine) {
-    const endsOk = a.isPermanent || !a.endDate || a.endDate >= today
-    if (a.startDate <= today && endsOk) return a.jobId
-  }
-  if (mine.length) return mine[0].jobId
-  return 'YARD'
-}
-
 function JobDetail({ job, user, workers, assignments, accounts, requests, pendingWorkerNames, onAddCrew, onEditJob, onRemove, removeError }) {
-  const crew = workers.filter((w) => currentJobIdFor(w, assignments) === job.id)
+  const crew = workers.filter((w) => currentJobId(w, assignments) === job.id)
   const pm = accountById(accounts, job.pmId)
   const pendingReqs = requests.filter((r) => (r.fromJobId === job.id || r.toJobId === job.id) && r.status === 'Pending')
 
@@ -152,7 +141,7 @@ function JobDetail({ job, user, workers, assignments, accounts, requests, pendin
         </div>
         <div className="jobs-detail-actions">
           {isPm(user) && <button className="btn-red btn-sm" onClick={onAddCrew}>+ Add Crew</button>}
-          {checkAdminInline(user) && <button className="btn-outline btn-sm" onClick={onEditJob}>Edit Job</button>}
+          {checkAdmin(user) && <button className="btn-outline btn-sm" onClick={onEditJob}>Edit Job</button>}
         </div>
       </div>
 
@@ -204,8 +193,4 @@ function JobDetail({ job, user, workers, assignments, accounts, requests, pendin
       </div>
     </>
   )
-}
-
-function checkAdminInline(user) {
-  return user.role === 'admin'
 }
