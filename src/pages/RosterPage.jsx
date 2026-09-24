@@ -1,8 +1,3 @@
-// Company-wide roster, grouped by current job. Workers are draggable
-// (PM/admin only) onto a different job's group to reassign them, or onto
-// "Yard / Available" to remove them from their current job — both using
-// the shared logic in utils/assignmentActions.js so drag-drop behaves
-// identically to the modal-based Assign/Remove actions elsewhere.
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
@@ -18,8 +13,8 @@ export default function RosterPage() {
   const { data, loading, refresh } = useData()
   const { jobs, workers, assignments, requests } = data
 
-  const [workerModal, setWorkerModal] = useState(null) // null | 'new' | worker object
-  const [assignModal, setAssignModal] = useState(null) // null | { workerId?, jobId? }
+  const [workerModal, setWorkerModal] = useState(null)
+  const [assignModal, setAssignModal] = useState(null)
   const [dragWorkerId, setDragWorkerId] = useState(null)
   const [dragOverJobId, setDragOverJobId] = useState(null)
   const [dragError, setDragError] = useState('')
@@ -44,10 +39,14 @@ export default function RosterPage() {
   const onSiteCount = workers.filter((w) => currentJobId(w, assignments) !== 'YARD').length
   const availableCount = workers.filter((w) => currentJobId(w, assignments) === 'YARD').length
 
-  function handleDragStart(workerId) {
+  function handleDragStart(e, workerId) {
     if (!canDrag) return
     setDragWorkerId(workerId)
     setDragError('')
+    // Required for Firefox/Safari to actually initiate the drag —
+    // without setData, some browsers silently cancel it.
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', workerId)
   }
 
   function handleDragEnd() {
@@ -55,13 +54,26 @@ export default function RosterPage() {
     setDragOverJobId(null)
   }
 
-  async function handleDrop(targetJobId) {
-    setDragOverJobId(null)
-    if (!canDrag || !dragWorkerId) return
+  function handleDragOver(e, jobId) {
+    if (!canDrag) return
+    // Must be unconditional — the browser rejects the drop entirely if
+    // preventDefault isn't called on every dragover event.
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverJobId(jobId)
+  }
 
-    const worker = workers.find((w) => w.id === dragWorkerId)
-    const fromJobId = worker ? currentJobId(worker, assignments) : null
+  async function handleDrop(e, targetJobId) {
+    e.preventDefault()
+    setDragOverJobId(null)
+    if (!canDrag) return
+    // Fall back to the drag payload in case component state lagged behind.
+    const workerId = dragWorkerId || e.dataTransfer.getData('text/plain')
     setDragWorkerId(null)
+    if (!workerId) return
+
+    const worker = workers.find((w) => w.id === workerId)
+    const fromJobId = worker ? currentJobId(worker, assignments) : null
     if (!worker || fromJobId === targetJobId) return
 
     setDragError('')
@@ -117,9 +129,9 @@ export default function RosterPage() {
           <div
             key={job.id}
             className={`roster-group${dragOverJobId === job.id ? ' roster-group-dragover' : ''}`}
-            onDragOver={(e) => { if (canDrag && dragWorkerId) { e.preventDefault(); setDragOverJobId(job.id) } }}
+            onDragOver={(e) => handleDragOver(e, job.id)}
             onDragLeave={() => setDragOverJobId((cur) => (cur === job.id ? null : cur))}
-            onDrop={(e) => { e.preventDefault(); handleDrop(job.id) }}
+            onDrop={(e) => handleDrop(e, job.id)}
           >
             <div className="roster-group-head">
               <span className="color-dot roster-group-dot" style={{ background: job.color }} />
@@ -140,7 +152,7 @@ export default function RosterPage() {
                     key={p.id}
                     className={`worker-card${canDrag ? ' worker-card-draggable' : ''}${dragWorkerId === p.id ? ' worker-card-dragging' : ''}`}
                     draggable={canDrag}
-                    onDragStart={() => handleDragStart(p.id)}
+                    onDragStart={(e) => handleDragStart(e, p.id)}
                     onDragEnd={handleDragEnd}
                   >
                     <div className="worker-card-avatar" style={{ background: isAvail ? 'var(--border)' : job.color }}>
