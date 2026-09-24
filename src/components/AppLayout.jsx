@@ -1,12 +1,9 @@
-// App shell: sidebar (desktop) / bottom nav (mobile) + topbar, matching
-// the original Dinto dark-sidebar/red-accent look. Wraps all pages in
-// DataProvider so useLiveData() only runs once, shared everywhere.
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { DataProvider, useData } from '../contexts/DataContext'
 
 const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Dashboard', roles: ['admin', 'pm', 'foreman'], icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
+  { path: '/board', label: 'Job Board', roles: ['admin', 'pm', 'foreman'], icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z' },
   { path: '/schedule', label: 'Schedule', roles: ['admin', 'pm', 'foreman'], icon: 'M3 4h18v18H3zM16 2v4M8 2v4M3 10h18' },
   { path: '/requests', label: 'Requests', roles: ['admin', 'pm'], icon: 'M4 9h16M16 5l4 4-4 4M20 15H4M8 11l-4 4 4 4' },
   { path: '/roster', label: 'Roster', roles: ['admin', 'pm', 'foreman'], icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z' },
@@ -15,7 +12,7 @@ const NAV_ITEMS = [
 ]
 
 const TITLES = {
-  '/dashboard': ['Dashboard', 'MANPOWER OVERVIEW'],
+  '/board': ['Job Board', 'COMPANY-WIDE CREW VIEW'],
   '/schedule': ['Crew Schedule', 'WHERE EVERY HAND IS'],
   '/requests': ['Manpower Requests', 'PM-TO-PM CREW TRANSFERS'],
   '/roster': ['Company Roster', 'ALL FIELD PERSONNEL'],
