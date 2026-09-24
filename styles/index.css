@@ -401,3 +401,8 @@ a { color: inherit; text-decoration: none; }
 .worker-card-draggable { cursor: grab; }
 .worker-card-draggable:active { cursor: grabbing; }
 .worker-card-dragging { opacity: .4; }
+/* ── JOBS: DRAG AND DROP ───────────────────────────────────────── */
+.jobs-list-item-dragover { background: rgba(226,20,60,.06); box-shadow: 0 0 0 2px var(--red) inset; }
+.jobs-crew-row-draggable { cursor: grab; }
+.jobs-crew-row-draggable:active { cursor: grabbing; }
+.jobs-crew-row-dragging { opacity: .4; }
