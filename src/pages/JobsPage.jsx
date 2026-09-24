@@ -1,14 +1,15 @@
 // Two-panel job management view: job list on the left, crew detail on
-// the right. "Remove from job" now closes out the assignment record via
-// the API (set end date to yesterday) instead of just deleting it, so
-// assignment history is preserved exactly like removeFromJob did before.
+// the right. Crew rows are draggable onto a different job in the left
+// list to reassign them — same shared logic as Roster's drag-and-drop
+// (utils/assignmentActions.js), so both behave identically.
 import { useState, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { currentJobId, accountById } from '../utils/lookups'
-import { fmtDateShort, shiftDay, todayStr } from '../utils/dates'
+import { fmtDateShort } from '../utils/dates'
 import { isAdmin as checkAdmin, isPm } from '../utils/permissions'
-import { api, ApiError } from '../apiClient'
+import { moveWorkerToJob, removeWorkerFromJob } from '../utils/assignmentActions'
+import { ApiError } from '../apiClient'
 import JobModal from '../components/modals/JobModal'
 import AssignWorkerModal from '../components/modals/AssignWorkerModal'
 
@@ -23,7 +24,11 @@ export default function JobsPage() {
 
   const [jobModal, setJobModal] = useState(null) // null | 'new' | job object
   const [assignModal, setAssignModal] = useState(null) // null | { jobId }
-  const [removeError, setRemoveError] = useState('')
+  const [actionError, setActionError] = useState('')
+  const [dragWorkerId, setDragWorkerId] = useState(null)
+  const [dragOverJobId, setDragOverJobId] = useState(null)
+
+  const canDrag = isPm(user)
 
   const pendingWorkerNames = useMemo(
     () => new Set(requests.filter((r) => r.status === 'Pending' && r.requestType === 'person').map((r) => r.workerName)),
@@ -32,19 +37,41 @@ export default function JobsPage() {
 
   async function handleRemove(workerId, jobId) {
     if (!confirm('Remove this worker from the job? Their assignment history is preserved.')) return
-    setRemoveError('')
-    const yesterday = shiftDay(todayStr(), -1)
-    const active = assignments
-      .filter((a) => a.workerId === workerId && a.jobId === jobId)
-      .sort((a, b) => (b.startDate > a.startDate ? 1 : -1))
-      .find((a) => a.isPermanent || !a.endDate || a.endDate >= todayStr())
-
-    if (!active) return
+    setActionError('')
     try {
-      await api.put('/assignments', { id: active.id, isPermanent: false, endDate: yesterday })
+      await removeWorkerFromJob(workerId, jobId, assignments)
       await refresh()
     } catch (err) {
-      setRemoveError(err instanceof ApiError ? err.message : 'Something went wrong.')
+      setActionError(err instanceof ApiError ? err.message : 'Something went wrong.')
+    }
+  }
+
+  function handleDragStart(workerId) {
+    if (!canDrag) return
+    setDragWorkerId(workerId)
+    setActionError('')
+  }
+
+  function handleDragEnd() {
+    setDragWorkerId(null)
+    setDragOverJobId(null)
+  }
+
+  async function handleDropOnJob(targetJobId) {
+    setDragOverJobId(null)
+    if (!canDrag || !dragWorkerId) return
+
+    const worker = workers.find((w) => w.id === dragWorkerId)
+    const fromJobId = worker ? currentJobId(worker, assignments) : null
+    setDragWorkerId(null)
+    if (!worker || fromJobId === targetJobId) return
+
+    setActionError('')
+    try {
+      await moveWorkerToJob(worker.id, targetJobId)
+      await refresh()
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Something went wrong moving that worker.')
     }
   }
 
@@ -61,6 +88,10 @@ export default function JobsPage() {
         )}
       </div>
 
+      {canDrag && visibleJobs.length > 0 && (
+        <div className="roster-drag-hint">Drag a crew member onto another job in the list to reassign them.</div>
+      )}
+
       <div className="jobs-layout">
         <div className="jobs-list">
           {visibleJobs.length === 0 ? (
@@ -73,8 +104,11 @@ export default function JobsPage() {
               return (
                 <button
                   key={j.id}
-                  className={`jobs-list-item${active ? ' active' : ''}`}
+                  className={`jobs-list-item${active ? ' active' : ''}${dragOverJobId === j.id ? ' jobs-list-item-dragover' : ''}`}
                   onClick={() => setSelectedJobId(j.id)}
+                  onDragOver={(e) => { if (canDrag && dragWorkerId) { e.preventDefault(); setDragOverJobId(j.id) } }}
+                  onDragLeave={() => setDragOverJobId((cur) => (cur === j.id ? null : cur))}
+                  onDrop={(e) => { e.preventDefault(); handleDropOnJob(j.id) }}
                 >
                   <div className="jobs-list-item-top">
                     <span className="color-dot" style={{ background: j.color }} />
@@ -106,7 +140,11 @@ export default function JobsPage() {
               onAddCrew={() => setAssignModal({ jobId: selJob.id })}
               onEditJob={() => setJobModal(selJob)}
               onRemove={handleRemove}
-              removeError={removeError}
+              actionError={actionError}
+              canDrag={canDrag}
+              dragWorkerId={dragWorkerId}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
             />
           )}
         </div>
@@ -122,7 +160,10 @@ export default function JobsPage() {
   )
 }
 
-function JobDetail({ job, user, workers, assignments, accounts, requests, pendingWorkerNames, onAddCrew, onEditJob, onRemove, removeError }) {
+function JobDetail({
+  job, user, workers, assignments, accounts, requests, pendingWorkerNames,
+  onAddCrew, onEditJob, onRemove, actionError, canDrag, dragWorkerId, onDragStart, onDragEnd,
+}) {
   const crew = workers.filter((w) => currentJobId(w, assignments) === job.id)
   const pm = accountById(accounts, job.pmId)
   const pendingReqs = requests.filter((r) => (r.fromJobId === job.id || r.toJobId === job.id) && r.status === 'Pending')
@@ -163,7 +204,7 @@ function JobDetail({ job, user, workers, assignments, accounts, requests, pendin
       <div className="jobs-detail-crew-head">
         <div className="jobs-detail-crew-label">Current Crew</div>
       </div>
-      {removeError && <div className="modal-error" style={{ display: 'block', marginBottom: 10 }}>{removeError}</div>}
+      {actionError && <div className="modal-error" style={{ display: 'block', marginBottom: 10 }}>{actionError}</div>}
       <div className="jobs-crew-list">
         {crew.length === 0 ? (
           <div className="jobs-crew-empty">No crew assigned — use <strong>+ Add Crew</strong> to assign workers</div>
@@ -176,7 +217,13 @@ function JobDetail({ job, user, workers, assignments, accounts, requests, pendin
             if (pendingWorkerNames.has(w.name)) status = 'Requested'
             const since = assign?.startDate ? ` \u00b7 since ${fmtDateShort(assign.startDate)}` : ''
             return (
-              <div key={w.id} className="jobs-crew-row">
+              <div
+                key={w.id}
+                className={`jobs-crew-row${canDrag ? ' jobs-crew-row-draggable' : ''}${dragWorkerId === w.id ? ' jobs-crew-row-dragging' : ''}`}
+                draggable={canDrag}
+                onDragStart={() => onDragStart(w.id)}
+                onDragEnd={onDragEnd}
+              >
                 <div className="jobs-crew-avatar" style={{ background: job.color }}>{w.initials}</div>
                 <div className="jobs-crew-info">
                   <div className="jobs-crew-name">{w.name}</div>
