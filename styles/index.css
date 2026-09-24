@@ -406,3 +406,44 @@ a { color: inherit; text-decoration: none; }
 .jobs-crew-row-draggable { cursor: grab; }
 .jobs-crew-row-draggable:active { cursor: grabbing; }
 .jobs-crew-row-dragging { opacity: .4; }
+/* ── JOB BOARD ─────────────────────────────────────────────────── */
+.board-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+.board-title { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
+.board-hint { font-family: var(--mono); font-size: 10px; letter-spacing: 1px; color: var(--text-label); margin-top: 3px; }
+.board-legend { display: flex; gap: 14px; }
+.legend-dot-item { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .5px; color: var(--text-muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+.board-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.board-search { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 9px; padding: 8px 12px; min-width: 220px; color: var(--text-label); }
+.board-search input { border: none; outline: none; font-size: 13px; flex: 1; background: transparent; color: var(--text); }
+.board-trade-tabs { display: flex; gap: 2px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 9px; padding: 3px; }
+.board-trade-tab { font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 6px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; }
+.board-trade-tab.active { background: #18181b; color: #fff; }
+.board-controls-spacer { flex: 1; }
+
+.board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.board-card {
+  background: #fff; border: 1px solid var(--border); border-top: 3px solid var(--text-faint);
+  border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  transition: background .12s, box-shadow .12s;
+}
+.board-card-dragover { background: rgba(226,20,60,.03); box-shadow: 0 0 0 2px var(--red) inset; }
+.board-card-head { display: flex; align-items: center; justify-content: space-between; }
+.board-card-number { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; letter-spacing: .5px; }
+.board-card-number-empty { background: var(--panel-2); color: var(--text-faint); }
+.board-card-count { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--text-muted); background: var(--panel-2); padding: 2px 9px; border-radius: 20px; }
+.board-card-name { font-size: 15px; font-weight: 700; }
+.board-card-meta { font-size: 11px; color: var(--text-muted); margin-top: -6px; }
+.board-card-crew { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.board-card-empty { font-size: 12px; color: var(--text-faint); padding: 10px 0; text-align: center; }
+
+.board-worker { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--border); border-left: 3px solid var(--text-faint); background: var(--panel-2); position: relative; }
+.board-worker-draggable { cursor: grab; }
+.board-worker-draggable:active { cursor: grabbing; }
+.board-worker-dragging { opacity: .4; }
+.board-worker-avatar { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; font-family: var(--mono); flex-shrink: 0; }
+.board-worker-info { flex: 1; min-width: 0; }
+.board-worker-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.board-worker-phone { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+.board-worker-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
